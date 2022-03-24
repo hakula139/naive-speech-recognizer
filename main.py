@@ -1,7 +1,8 @@
 import numpy as np
-import numpy.fft as nf
+# import numpy.fft as nf
 import librosa
 
+from fft import fft, fft_freq
 from utils import *
 
 
@@ -18,13 +19,15 @@ def main() -> None:
     y, sr = librosa.load(wav_path, sr=sample_rate)
 
     # Extract n_samples points.
-    t0 = np.arange(0, n_samples, 1) / sr
+    t0 = np.arange(n_samples) / sr
     y0 = y[:n_samples]
     plot_time_domain(fig_time_path, t0, y0)
 
-    # Do FFT.
-    y0_freqs = nf.fftfreq(n_samples, 1 / sr)
-    y0_fft = np.abs(nf.fft(y0))
+    # Compute FFT.
+    # y0_freqs = nf.fftfreq(n_samples, 1 / sr)
+    y0_freqs = fft_freq(n_samples, sr)
+    # y0_fft = np.abs(nf.fft(y0))
+    y0_fft = np.abs(fft(y0))
     plot_freq_domain(
         fig_freq_path, y0_freqs[y0_freqs >= 0],  y0_fft[y0_freqs >= 0],
     )
