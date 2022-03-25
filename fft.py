@@ -13,7 +13,6 @@ def fft(a: np.ndarray) -> np.ndarray:
     '''
 
     n = a.shape[0]
-    w = np.exp(2j * np.pi / n * np.arange(n // 2))  # roots of unity
     if n == 1:
         return a
 
@@ -21,6 +20,7 @@ def fft(a: np.ndarray) -> np.ndarray:
     y_o = fft(a[1::2])  # odd indices of a
 
     y = np.empty(n, dtype=complex)
+    w = np.exp(2j * np.pi / n * np.arange(n // 2))  # roots of unity
     for i in range(n // 2):
         y[i] = y_e[i] + w[i] * y_o[i]
         y[i + n // 2] = y_e[i] - w[i] * y_o[i]
