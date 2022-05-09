@@ -1,16 +1,19 @@
-import os
-import sys
+from typing import Union
+from concurrent import futures
 from pathlib import Path
+import soundfile as sf
+import sys
+
 import numpy as np
 import librosa
-import soundfile as sf
 
 
 # Parameters
 default_sr = 8000
+timeout = 5  # second
 
 
-def resample(path: str, sr: int, write_to_file=False) -> np.ndarray:
+def resample(path: Union[str, Path], sr: int, write_to_file=False) -> np.ndarray:
     '''
     Resample the audio file to target sample rate.
 
@@ -22,32 +25,40 @@ def resample(path: str, sr: int, write_to_file=False) -> np.ndarray:
         The resampled audio time series.
     '''
 
-    # Resample to target sample_rate.
+    print(f'Resampling audio "{path}" to sample rate {sr} Hz...')
     y, sr = librosa.load(path, sr=sr)
     if write_to_file:
-        p = Path(path)
-        p_out = p.with_suffix('.dat')
+        p_out = Path(path).with_suffix('.dat')
         sf.write(p_out, y, sr, subtype='PCM_16', format='WAV')
-        print(f'Output audio to {p_out}')
+        print(f'Output audio to "{p_out}".')
     return y
 
 
 if __name__ == '__main__':
     try:
-        wav_dir = sys.argv[1]
+        wav_path = Path(sys.argv[1])
         sr = int(sys.argv[2]) if len(sys.argv) >= 3 else default_sr
-        wav_count = 0
-
-        for entry in os.scandir(wav_dir):
-            if entry.is_file() and entry.path.endswith('.wav'):
-                print(
-                    f'Resampling audio {entry.path} to sample rate {sr} Hz...')
-                resample(entry.path, sr, write_to_file=True)
-                wav_count += 1
-        print(f'Processed {wav_count} audio files.')
-
     except IndexError:
-        print('Invalid arguments.')
+        sys.exit('Invalid arguments.')
 
-    except KeyboardInterrupt:
-        print('\nAborted.')
+    with futures.ThreadPoolExecutor() as e:
+        results = []
+        if Path.exists(wav_path):
+            wav_paths = [entry for entry in wav_path.rglob('*.wav')]
+            results = [e.submit(resample, p, sr, True) for p in wav_paths]
+
+        success_count = 0
+        try:
+            for r in futures.as_completed(results):
+                r.result(timeout)
+                success_count += 1
+        except TimeoutError:
+            print('Timeout.')
+        except KeyboardInterrupt:
+            for r in results:
+                r.cancel()
+            print('\nAborted.')
+
+        print(f'Processed {success_count} audio files.')
+
+    
