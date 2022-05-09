@@ -8,8 +8,8 @@ from utils import *
 
 # Parameters
 wav_path = 'data/signal.wav'
-fig_time_path = 'assets/time_domain.png'
-fig_freq_path = 'assets/freq_domain.png'
+fig_time_path = 'assets/fft/time_domain.png'
+fig_freq_path = 'assets/fft/freq_domain.png'
 sample_rate = 8000.
 n_samples = 1024
 
