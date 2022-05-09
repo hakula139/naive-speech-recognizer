@@ -1,28 +1,24 @@
-# 数字信号处理
+# FFT: Fast Fourier Transform
 
 ## 目录
 
-- [数字信号处理](#数字信号处理)
-  - [目录](#目录)
-  - [1 FFT](#1-fft)
-    - [1.1 程序说明](#11-程序说明)
-      - [1.1.1 安装](#111-安装)
-      - [1.1.2 使用](#112-使用)
-      - [1.1.3 测试](#113-测试)
-    - [1.2 程序原理](#12-程序原理)
-      - [1.2.0 总览](#120-总览)
-      - [1.2.1 重采样](#121-重采样)
-      - [1.2.2 截取](#122-截取)
-      - [1.2.3 FFT](#123-fft)
-      - [1.2.4 FFT 实现](#124-fft-实现)
-  - [贡献者](#贡献者)
-  - [许可协议](#许可协议)
+- [目录](#目录)
+- [1 程序说明](#1-程序说明)
+  - [1.1 安装](#11-安装)
+  - [1.2 使用](#12-使用)
+  - [1.3 测试](#13-测试)
+- [2 程序原理](#2-程序原理)
+  - [2.0 总览](#20-总览)
+  - [2.1 重采样](#21-重采样)
+  - [2.2 截取](#22-截取)
+  - [2.3 FFT](#23-fft)
+  - [2.4 FFT 实现](#24-fft-实现)
+- [贡献者](#贡献者)
+- [许可协议](#许可协议)
 
-## 1 FFT
+## 1 程序说明
 
-### 1.1 程序说明
-
-#### 1.1.1 安装
+### 1.1 安装
 
 在使用前，你需要先安装程序所需的依赖：
 
@@ -35,7 +31,7 @@ conda env update --name dsp --file environment.yml
 conda activate dsp
 ```
 
-#### 1.1.2 使用
+### 1.2 使用
 
 将音频文件放置于 `./data` 目录下，执行以下命令启动程序：
 
@@ -45,7 +41,7 @@ python3 main.py
 
 生成的幅度谱将保存在 `./assets` 目录下。
 
-#### 1.1.3 测试
+### 1.3 测试
 
 本实验中，我们使用了预录制的音频文件 `./data/signal.wav`（未上传至 git 仓库），其内容是单词 signal 的一段朗读语音，按 48000 Hz 采样。
 
@@ -54,9 +50,9 @@ python3 main.py
 - `time_domain.png`：原音频的一个切片（1024 个采样）的幅度图
 - `freq_domain.png`：信号经 FFT 后在频域的幅度谱
 
-### 1.2 程序原理
+## 2 程序原理
 
-#### 1.2.0 总览
+### 2.0 总览
 
 ```python {.line-numbers}
 # main.py
@@ -88,7 +84,7 @@ def main() -> None:
     )
 ```
 
-#### 1.2.1 重采样
+### 2.1 重采样
 
 ```python {.line-numbers}
 # main.py
@@ -101,7 +97,7 @@ y, sr = librosa.load(wav_path, sr=sample_rate)
 
 为什么不在录音时就直接使用 8000 Hz 采样呢？其实我也想这样做，但即使我使用了专业音频处理软件 Logic Pro，在录音时其支持的最低采样率还是有 44100 Hz，没有更低的选项了。于是只好这样绕了个弯子。
 
-#### 1.2.2 截取
+### 2.2 截取
 
 由于音频信号可能很长，我们在分析前需要先将信号分割成若干个帧。这里实验没有进一步要求，我们就简单截取了前 1024 个采样。
 
@@ -139,11 +135,11 @@ def plot_time_domain(output_path: str, t: np.ndarray, y: np.ndarray) -> None:
     plt.savefig(output_path)
 ```
 
-![Time Domain](../assets/time_domain.png)
+![Time Domain](../assets/fft/time_domain.png)
 
 由于截取的是前 1024 个采样，这段音频其实在发 signal 里的 s 音，所以幅度很小，看起来有点像是环境噪音了。
 
-#### 1.2.3 FFT
+### 2.3 FFT
 
 然后我们就对这段信号进行 FFT。这里为了验证我们手写的 FFT 是否正确，我们先使用 `numpy` 库的 FFT 实现输出一个幅度谱。
 
@@ -161,7 +157,7 @@ plot_freq_domain(
 )
 ```
 
-![Frequency Domain (numpy)](../assets/freq_domain_numpy.png)
+![Frequency Domain (numpy)](../assets/fft/freq_domain_numpy.png)
 
 然后将其替换成我们自己的实现。
 
@@ -176,11 +172,11 @@ plot_freq_domain(
 )
 ```
 
-![Frequency Domain](../assets/freq_domain.png)
+![Frequency Domain](../assets/fft/freq_domain.png)
 
 可以看到幅度谱一模一样，说明我们的实现是正确的。
 
-#### 1.2.4 FFT 实现
+### 2.4 FFT 实现
 
 本项目中我们实现的是经典的 2 基底 Cooley–Tukey FFT 算法[^cooley-wiki]，利用了分治法的思想。算法的输入是信号在时域的幅度数组 $A$，输出是信号在频域的幅度数组 $Y$。
 
