@@ -4,15 +4,15 @@
 
 - [目录](#目录)
 - [1 程序说明](#1-程序说明)
-  - [1.1 安装](#11-安装)
-  - [1.2 使用](#12-使用)
-  - [1.3 测试](#13-测试)
+    - [1.1 安装](#11-安装)
+    - [1.2 使用](#12-使用)
+    - [1.3 测试](#13-测试)
 - [2 程序原理](#2-程序原理)
-  - [2.0 总览](#20-总览)
-  - [2.1 重采样](#21-重采样)
-  - [2.2 截取](#22-截取)
-  - [2.3 FFT](#23-fft)
-  - [2.4 FFT 实现](#24-fft-实现)
+    - [2.0 总览](#20-总览)
+    - [2.1 重采样](#21-重采样)
+    - [2.2 截取](#22-截取)
+    - [2.3 FFT](#23-fft)
+    - [2.4 FFT 实现](#24-fft-实现)
 - [贡献者](#贡献者)
 - [许可协议](#许可协议)
 
@@ -39,13 +39,13 @@ conda activate dsp
 python3 main.py
 ```
 
-生成的幅度谱将保存在 `./assets` 目录下。
+生成的幅度谱将保存在 `./assets/fft` 目录下。
 
 ### 1.3 测试
 
 本实验中，我们使用了预录制的音频文件 `./data/signal.wav`（未上传至 git 仓库），其内容是单词 signal 的一段朗读语音，按 48000 Hz 采样。
 
-运行程序后，程序将在 `./assets` 目录下生成 2 个文件：
+运行程序后，程序将在 `./assets/fft` 目录下生成 2 个文件：
 
 - `time_domain.png`：原音频的一个切片（1024 个采样）的幅度图
 - `freq_domain.png`：信号经 FFT 后在频域的幅度谱
@@ -59,9 +59,9 @@ python3 main.py
 
 # Parameters
 wav_path = 'data/signal.wav'
-fig_time_path = 'assets/time_domain.png'
-fig_freq_path = 'assets/freq_domain.png'
-sample_rate = 8000.
+fig_time_path = 'assets/fft/time_domain.png'
+fig_freq_path = 'assets/fft/freq_domain.png'
+sample_rate = 8000
 n_samples = 1024
 
 
@@ -75,7 +75,7 @@ def main() -> None:
     plot_time_domain(fig_time_path, t0, y0)
 
     # Compute FFT.
-    # y0_freqs = nf.fftfreq(n_samples, 1 / sr)
+    # y0_freqs = nf.fftfreq(n_samples, 1. / sr)
     y0_freqs = fft_freq(n_samples, sr)
     # y0_fft = np.abs(nf.fft(y0))
     y0_fft = np.abs(fft(y0))
@@ -150,7 +150,7 @@ import numpy as np
 import numpy.fft as nf
 
 # Compute FFT.
-y0_freqs = nf.fftfreq(n_samples, 1 / sr)
+y0_freqs = nf.fftfreq(n_samples, 1. / sr)
 y0_fft = np.abs(nf.fft(y0))
 plot_freq_domain(
     fig_freq_path, y0_freqs[y0_freqs >= 0],  y0_fft[y0_freqs >= 0],
