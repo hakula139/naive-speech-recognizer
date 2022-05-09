@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def plot_time_domain(output_path: str, t: np.ndarray, y: np.ndarray) -> None:
+def plot_time_domain(output_path, t: np.ndarray, y: np.ndarray) -> None:
     '''
     Plot the amplitudes of a wave in time domain.
 
@@ -21,7 +21,8 @@ def plot_time_domain(output_path: str, t: np.ndarray, y: np.ndarray) -> None:
     plt.tight_layout()
     plt.savefig(output_path)
 
-def plot_freq_domain(output_path: str, f: np.ndarray, y: np.ndarray) -> None:
+
+def plot_freq_domain(output_path, f: np.ndarray, y: np.ndarray) -> None:
     '''
     Plot the amplitude spectrum of a wave in frequency domain.
 

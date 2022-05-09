@@ -43,7 +43,7 @@ if __name__ == '__main__':
 
     with futures.ThreadPoolExecutor() as e:
         results = []
-        if Path.exists(wav_path):
+        if wav_path.exists():
             wav_paths = [entry for entry in wav_path.rglob('*.wav')]
             results = [e.submit(resample, p, sr, True) for p in wav_paths]
 
@@ -60,5 +60,3 @@ if __name__ == '__main__':
             print('\nAborted.')
 
         print(f'Processed {success_count} audio files.')
-
-    
