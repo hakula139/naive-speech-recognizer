@@ -27,20 +27,22 @@ def fft(a: np.ndarray) -> np.ndarray:
     return y
 
 
-def fft_freq(n: int, sr: float) -> np.ndarray:
+def fft_freq(n: int, sr: float, xs: np.ndarray = None) -> np.ndarray:
     '''
     Return the Discrete Fourier Transform sample frequencies.
 
     Args:
         `n`: window length
         `sr`: sample rate
+        `xs`: the original array to transform to DFT frequencies
 
     Returns:
-        Array of length `n` containing the sample frequencies.
+        An array of sample frequencies.
     '''
 
-    result = np.concatenate([
-        np.arange(0, (n + 1) // 2, dtype=int),
-        np.arange(-(n // 2), 0, dtype=int),
-    ])
-    return result * sr / n
+    if xs is None:
+        xs = np.concatenate([
+            np.arange(0, (n + 1) // 2, dtype=int),
+            np.arange(-(n // 2), 0, dtype=int),
+        ])
+    return xs * sr / n
