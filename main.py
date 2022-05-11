@@ -54,7 +54,7 @@ def create_spectrogram(y: np.ndarray, n_window: int) -> Tuple[np.ndarray, np.nda
 
     Args:
         `y`: time series of the audio signal
-        `n_window`: the number of samples used in each window for the FFT
+        `n_window`: the number of samples used in each window
 
     Returns:
         `i_starts`: the starting indices of each window
@@ -62,12 +62,13 @@ def create_spectrogram(y: np.ndarray, n_window: int) -> Tuple[np.ndarray, np.nda
     '''
 
     n_samples = y.shape[0]
-    half_n_window = n_window >> 1
-    i_starts = np.arange(0, n_samples, half_n_window, dtype=int)
+    i_starts = np.arange(0, n_samples, n_window // 2, dtype=int)
     i_starts = i_starts[i_starts + n_window < n_samples]
-    spec = np.array([
-        np.abs(fft(y[i:i+n_window])[:half_n_window]) for i in i_starts
-    ])
+    n_fft = utils.round_up(n_window)
+    zero_padding = np.zeros(n_fft - n_window)
+    spec = np.array([np.abs(
+        fft(np.concatenate((y[i:i+n_window], zero_padding)))[:n_fft // 2]
+    ) for i in i_starts])
     # Rescale the absolute value of the spectrogram.
     spec = 10 * np.log10(spec.T + np.finfo(float).eps)
     return i_starts, spec
@@ -107,7 +108,7 @@ if __name__ == '__main__':
                 fig_time_path = f'{p.stem}_time_domain.png'
                 plot_waveform(fig_time_path, y, sr)
                 for t_window in t_windows:
-                    n_window = utils.round_up(t_window * sr / 1000)
+                    n_window = t_window * sr // 1000
                     i_starts, spec = create_spectrogram(y, n_window)
                     fig_spec_path = f'{p.stem}_spec_domain_{t_window}ms.png'
                     plot_spectrogram(

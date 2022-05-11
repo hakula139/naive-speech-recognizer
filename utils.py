@@ -65,7 +65,7 @@ def plot_spectrogram(
     xlabels: np.ndarray,
     yticks: np.ndarray,
     ylabels: np.ndarray,
-    n_window: int,
+    n_fft: int,
 ) -> None:
     '''
     Plot the spectrogram of a wave.
@@ -77,11 +77,11 @@ def plot_spectrogram(
         `xlabels`: tick labels of the x-axis
         `yticks`: tick locations of the y-axis
         `ylabels`: tick labels of the y-axis
-        `n_window`: the number of samples used in each window for the FFT
+        `n_fft`: the number of samples for the FFT
     '''
 
     plt.figure()
-    plt.title(f'Spectrogram ({n_window} points FFT)')
+    plt.title(f'Spectrogram ({n_fft} window size)')
     plt.xticks(xticks, xlabels)
     plt.xlabel('Time / s')
     plt.yticks(yticks, ylabels)
