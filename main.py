@@ -6,6 +6,7 @@ import librosa
 
 from fft import fft, fft_freq
 import utils
+from windows import hamming
 
 
 # Parameters
@@ -64,11 +65,11 @@ def create_spectrogram(y: np.ndarray, n_window: int) -> Tuple[np.ndarray, np.nda
     n_samples = y.shape[0]
     i_starts = np.arange(0, n_samples, n_window // 2, dtype=int)
     i_starts = i_starts[i_starts + n_window < n_samples]
-    n_fft = utils.round_up(n_window)
+    n_fft = utils.next_pow2(n_window)
     zero_padding = np.zeros(n_fft - n_window)
-    spec = np.array([np.abs(
-        fft(np.concatenate((y[i:i+n_window], zero_padding)))[:n_fft // 2]
-    ) for i in i_starts])
+    spec = np.array([np.abs(fft(
+        np.concatenate((hamming(n_window) * y[i:i+n_window], zero_padding))
+    )[:n_fft // 2]) for i in i_starts])
     # Rescale the absolute value of the spectrogram.
     spec = 10 * np.log10(spec.T + np.finfo(float).eps)
     return i_starts, spec
@@ -110,7 +111,7 @@ if __name__ == '__main__':
                 for t_window in t_windows:
                     n_window = t_window * sr // 1000
                     i_starts, spec = create_spectrogram(y, n_window)
-                    fig_spec_path = f'{p.stem}_spec_domain_{t_window}ms.png'
+                    fig_spec_path = f'{p.stem}_spec_domain_{t_window}ms_hamming.png'
                     plot_spectrogram(
                         fig_spec_path, i_starts, spec, y.shape[0], sr,
                     )

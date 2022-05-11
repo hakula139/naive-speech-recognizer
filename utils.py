@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def round_up(x: int) -> int:
+def next_pow2(x: int) -> int:
     '''
     Round up to the next highest power of 2.
 
@@ -81,7 +81,7 @@ def plot_spectrogram(
     '''
 
     plt.figure()
-    plt.title(f'Spectrogram ({n_fft} window size)')
+    plt.title(f'Spectrogram ({n_fft} window size, hamming window)')
     plt.xticks(xticks, xlabels)
     plt.xlabel('Time / s')
     plt.yticks(yticks, ylabels)
