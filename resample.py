@@ -43,9 +43,13 @@ if __name__ == '__main__':
 
     with futures.ThreadPoolExecutor() as e:
         results = []
-        if wav_path.exists():
+        if wav_path.is_file():
+            wav_paths = [wav_path]
+        elif wav_path.is_dir():
             wav_paths = [entry for entry in wav_path.rglob('*.wav')]
-            results = [e.submit(resample, p, sr, True) for p in wav_paths]
+        else:
+            wav_paths = []
+        results = [e.submit(resample, p, sr, True) for p in wav_paths]
 
         success_count = 0
         try:
