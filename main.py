@@ -76,7 +76,7 @@ def create_spectrogram(y: np.ndarray, n_window: int) -> Tuple[np.ndarray, np.nda
 
 
 def plot_spectrogram(
-    filename: str, i_starts: np.ndarray, spec: np.ndarray, n_samples: int, sr: int
+    filename: str, i_starts: np.ndarray, spec: np.ndarray, sr: int,
 ) -> None:
     '''
     Plot the spectrogram of the audio signal.
@@ -85,7 +85,6 @@ def plot_spectrogram(
         `filename`: filename of the output figure
         `i_starts`: the starting indices of each window
         `spec`: the spectrogram to plot
-        `n_samples`: the number of samples
         `sr`: sample rate
     '''
 
