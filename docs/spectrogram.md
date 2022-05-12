@@ -11,6 +11,9 @@
   - [2.1 语音波形图](#21-语音波形图)
   - [2.2 语谱图生成](#22-语谱图生成)
   - [2.3 语谱图绘制](#23-语谱图绘制)
+- [3 运行结果](#3-运行结果)
+  - [3.1 语音波形图](#31-语音波形图)
+  - [3.2 语谱图](#32-语谱图)
 - [贡献者](#贡献者)
 - [许可协议](#许可协议)
 
@@ -45,7 +48,7 @@ python3 main.py
 
 ```bash
 python3 resample.py "path/to/example.wav" 8000  # 单个文件
-python3 resample.py "path/to/directory" 8000   # 目录下所有 .wav 文件递归批处理
+python3 resample.py "path/to/directory" 8000    # 目录下所有 .wav 文件递归批处理
 ```
 
 重采样后的音频文件将保存在同目录下，文件名的后缀名修改为 `.dat`。
@@ -235,6 +238,60 @@ def plot_spectrogram(
     plt.tight_layout()
     plt.savefig(output_path)
 ```
+
+## 3 运行结果
+
+### 3.1 语音波形图
+
+> **one**
+
+![One - 语音波形图](../assets/spectrogram/dev_set/one_time_domain.png)
+
+> **two**
+
+![Two - 语音波形图](../assets/spectrogram/dev_set/two_time_domain.png)
+
+> **six**
+
+![Six - 语音波形图](../assets/spectrogram/dev_set/six_time_domain.png)
+
+### 3.2 语谱图
+
+> **one**（窗口宽度 5 ms）
+
+![One - 语谱图（5 ms）](../assets/spectrogram/dev_set/one_spec_domain_5ms_hamming.png)
+
+> **one**（窗口宽度 10 ms）
+
+![One - 语谱图（10 ms）](../assets/spectrogram/dev_set/one_spec_domain_10ms_hamming.png)
+
+> **one**（窗口宽度 15 ms）
+
+![One - 语谱图（15 ms）](../assets/spectrogram/dev_set/one_spec_domain_15ms_hamming.png)
+
+> **two**（窗口宽度 5 ms）
+
+![Two - 语谱图（5 ms）](../assets/spectrogram/dev_set/two_spec_domain_5ms_hamming.png)
+
+> **two**（窗口宽度 10 ms）
+
+![Two - 语谱图（10 ms）](../assets/spectrogram/dev_set/two_spec_domain_10ms_hamming.png)
+
+> **two**（窗口宽度 15 ms）
+
+![Two - 语谱图（15 ms）](../assets/spectrogram/dev_set/two_spec_domain_15ms_hamming.png)
+
+> **six**（窗口宽度 5 ms）
+
+![Six - 语谱图（5 ms）](../assets/spectrogram/dev_set/six_spec_domain_5ms_hamming.png)
+
+> **six**（窗口宽度 10 ms）
+
+![Six - 语谱图（10 ms）](../assets/spectrogram/dev_set/six_spec_domain_10ms_hamming.png)
+
+> **six**（窗口宽度 15 ms）
+
+![Six - 语谱图（15 ms）](../assets/spectrogram/dev_set/six_spec_domain_15ms_hamming.png)
 
 ## 贡献者
 
