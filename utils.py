@@ -18,7 +18,9 @@ def next_pow2(x: int) -> int:
     return 1 << math.ceil(math.log2(x))
 
 
-def plot_time_domain(output_path, t: np.ndarray, y: np.ndarray) -> None:
+def plot_time_domain(
+    output_path, t: np.ndarray, y: np.ndarray, ranges: np.ndarray = None,
+) -> None:
     '''
     Plot the amplitudes of a wave in time domain.
 
@@ -26,6 +28,7 @@ def plot_time_domain(output_path, t: np.ndarray, y: np.ndarray) -> None:
         `output_path`: path to the output figure
         `t`: time of samples
         `y`: the amplitudes of samples
+        `ranges`: a list of ranges where voice activity is detected
     '''
 
     plt.figure()
@@ -33,6 +36,11 @@ def plot_time_domain(output_path, t: np.ndarray, y: np.ndarray) -> None:
     plt.xlabel('Time / s')
     plt.ylabel('Amplitude')
     plt.plot(t, y, c='blue', label='signal')
+    if ranges is not None:
+        for start, stop in ranges:
+            plt.axvspan(start, stop, facecolor='r', alpha=0.2)
+            plt.axvline(x=start, linestyle='--')
+            plt.axvline(x=stop, linestyle='--')
     plt.legend()
     plt.tight_layout()
     plt.savefig(output_path)

@@ -1,4 +1,4 @@
-from typing import Tuple, Union
+from typing import List, Tuple, Union
 from pathlib import Path
 
 import numpy as np
@@ -11,8 +11,9 @@ from windows import hamming
 
 # Parameters
 wav_path = Path('data/dev_set')
-fig_path = Path('assets/spectrogram/dev_set')
-t_windows = [5, 10, 15]  # millisecond
+fig_path = Path('assets/mfcc/dev_set')
+t_window = 10  # milliseconds
+amp_th = [2e-3, 6e-3]  # amplitude threshold for voice activity
 
 
 def load_audio(path: Union[str, Path]) -> Tuple[np.ndarray, int]:
@@ -32,7 +33,55 @@ def load_audio(path: Union[str, Path]) -> Tuple[np.ndarray, int]:
     return y, sr
 
 
-def plot_waveform(filename: str, y: np.ndarray, sr: int) -> None:
+def detect_voice_activity(y: np.ndarray, n_window: int) -> np.ndarray:
+    '''
+    Detect voice activity in the audio signal.
+
+    Args:
+        `y`: time series of the audio signal
+        `n_window`: the number of samples used in each window
+
+    Returns:
+        A list of ranges where voice activity is detected.
+    '''
+
+    n_samples = y.shape[0]
+    i_starts = np.arange(0, n_samples, n_window // 2, dtype=int)
+    i_starts = i_starts[i_starts + n_window < n_samples]
+    avg_amps = [np.average(np.abs(y[i:i+n_window])) for i in i_starts]
+
+    # Step 1: Find the ranges by judging whether the average amplitude of this
+    # frame is higher than threshold `amp_th[1]`.
+    ranges_1: List[List[int]] = []
+    for k, avg_amp in enumerate(avg_amps):
+        if avg_amp > amp_th[1]:
+            if len(ranges_1) > 0 and ranges_1[-1][1] >= k - 2:  # overlaps
+                ranges_1[-1][1] = k
+            else:
+                ranges_1.append([k, k])
+
+    # Step 2: Expand the ranges by judging whether the average amplitude of this
+    # frame is higher than threshold `amp_th[0]`.
+    ranges_2: List[List[int]] = []
+    for r in ranges_1:
+        i_start, i_stop = r[0], r[1]
+        i_stop_prev = ranges_2[-1][1] if len(ranges_2) > 0 else 0
+        while i_start > i_stop_prev and avg_amps[i_start] > amp_th[0]:
+            i_start -= 1
+        while i_stop < len(i_starts) - 1 and avg_amps[i_stop] > amp_th[0]:
+            i_stop += 1
+        if i_start <= i_stop_prev and i_stop_prev != 0:  # overlaps
+            ranges_2[-1][1] = i_stop
+        else:
+            ranges_2.append([i_start, i_stop])
+
+    ranges = [[i_starts[r[0]], i_starts[r[1]] + n_window] for r in ranges_2]
+    return np.array(ranges, dtype=float)
+
+
+def plot_waveform(
+    filename: str, y: np.ndarray, sr: int, ranges: np.ndarray = None,
+) -> None:
     '''
     Plot the waveform of the audio signal.
 
@@ -40,12 +89,16 @@ def plot_waveform(filename: str, y: np.ndarray, sr: int) -> None:
         `filename`: filename of the output figure
         `y`: time series of the audio signal
         `sr`: sample rate of the audio signal
+        `ranges`: a list of ranges where voice activity is detected
     '''
 
     fig_time_path = fig_path / filename
     n_samples = y.shape[0]
     t = np.arange(n_samples) / sr
-    utils.plot_time_domain(fig_time_path, t, y)
+    if ranges is not None:
+        ranges /= sr
+    print(f'Detected voice activities: {ranges}.')
+    utils.plot_time_domain(fig_time_path, t, y, ranges)
     print(f'Output figure to "{fig_time_path}".')
 
 
@@ -105,15 +158,11 @@ if __name__ == '__main__':
         try:
             for p in wav_paths:
                 y, sr = load_audio(p)
+                n_window = t_window * sr // 1000
+
+                ranges = detect_voice_activity(y, n_window)
                 fig_time_path = f'{p.stem}_time_domain.png'
-                plot_waveform(fig_time_path, y, sr)
-                for t_window in t_windows:
-                    n_window = t_window * sr // 1000
-                    i_starts, spec = create_spectrogram(y, n_window)
-                    fig_spec_path = f'{p.stem}_spec_domain_{t_window}ms_hamming.png'
-                    plot_spectrogram(
-                        fig_spec_path, i_starts, spec, sr,
-                    )
+                plot_waveform(fig_time_path, y, sr, ranges)
 
         except KeyboardInterrupt:
             print('\nAborted.')
