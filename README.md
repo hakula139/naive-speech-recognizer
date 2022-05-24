@@ -3,6 +3,7 @@
 ## 中文报告
 
 1. [FFT: Fast Fourier Transform](./docs/fft.md)
+2. [语谱图](./docs/spectrogram.md)
 
 ## Table of Contents
 

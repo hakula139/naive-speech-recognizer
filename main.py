@@ -112,7 +112,7 @@ if __name__ == '__main__':
                     i_starts, spec = create_spectrogram(y, n_window)
                     fig_spec_path = f'{p.stem}_spec_domain_{t_window}ms_hamming.png'
                     plot_spectrogram(
-                        fig_spec_path, i_starts, spec, y.shape[0], sr,
+                        fig_spec_path, i_starts, spec, sr,
                     )
 
         except KeyboardInterrupt:
