@@ -31,7 +31,7 @@ def plot_time_domain(
         `ranges`: a list of ranges where voice activity is detected
     '''
 
-    plt.figure()
+    plt.figure(figsize=(15, 4))
     plt.title('Time Domain')
     plt.xlabel('Time [s]')
     plt.ylabel('Amplitude')
@@ -45,24 +45,6 @@ def plot_time_domain(
     plt.savefig(output_path)
 
 
-def plot_zcr(output_path, t: np.ndarray, y: np.ndarray) -> None:
-    '''
-    Plot the average zero-crossing rate (ZCR) of a wave in time domain.
-
-    Args:
-        `output_path`: path to the output figure
-        `t`: time of samples
-        `y`: the average ZCR curve to plot
-    '''
-
-    plt.figure()
-    plt.title('Zero-Crossing Rate (ZCR)')
-    plt.xlabel('Sample index')
-    plt.ylabel('ZCR [kHz]')
-    plt.plot(t, y)
-    plt.tight_layout()
-    plt.savefig(output_path)
-
 def plot_freq_domain(output_path, f: np.ndarray, y: np.ndarray) -> None:
     '''
     Plot the amplitude spectrum of a wave in frequency domain.
@@ -73,7 +55,7 @@ def plot_freq_domain(output_path, f: np.ndarray, y: np.ndarray) -> None:
         `y`: the amplitude spectrum
     '''
 
-    plt.figure()
+    plt.figure(figsize=(15, 4))
     plt.title('Frequency Domain')
     plt.xlabel('Frequency [Hz]')
     plt.ylabel('Amplitude')
@@ -89,7 +71,7 @@ def plot_spectrogram(
     xlabels: np.ndarray,
     yticks: np.ndarray,
     ylabels: np.ndarray,
-    n_fft: int,
+    n_window: int,
 ) -> None:
     '''
     Plot the spectrogram of a wave.
@@ -101,16 +83,54 @@ def plot_spectrogram(
         `xlabels`: tick labels of the x-axis
         `yticks`: tick locations of the y-axis
         `ylabels`: tick labels of the y-axis
-        `n_fft`: the number of samples for the FFT
+        `n_window`: the number of samples used in each window
     '''
 
-    plt.figure()
-    plt.title(f'Spectrogram ({n_fft} window size, hamming window)')
+    plt.figure(figsize=(9, 6))
+    plt.title(f'Spectrogram ({n_window} window size, hamming window)')
     plt.xticks(xticks, xlabels)
     plt.xlabel('Time [s]')
     plt.yticks(yticks, ylabels)
     plt.ylabel('Frequency [Hz]')
     plt.imshow(spec, origin='lower', aspect='auto')
     plt.colorbar(use_gridspec=True)
+    plt.tight_layout()
+    plt.savefig(output_path)
+
+
+def plot_zcr(output_path, t: np.ndarray, y: np.ndarray) -> None:
+    '''
+    Plot the average zero-crossing rate (ZCR) of a wave in time domain.
+
+    Args:
+        `output_path`: path to the output figure
+        `t`: the indices of samples
+        `y`: the average ZCR curve to plot
+    '''
+
+    plt.figure(figsize=(15, 4))
+    plt.title('Zero-Crossing Rate (ZCR)')
+    plt.xlabel('Sample index')
+    plt.ylabel('ZCR [kHz]')
+    plt.plot(t, y)
+    plt.tight_layout()
+    plt.savefig(output_path)
+
+
+def plot_mel_filters(output_path, y: np.ndarray) -> None:
+    '''
+    Plot the Mel filter banks.
+
+    Args:
+        `output_path`: path to the output figure
+        `y`: the Mel filter banks to plot
+    '''
+
+    plt.figure(figsize=(15, 4))
+    plt.title('Mel Filter Banks')
+    plt.xlabel(r'$k$')
+    plt.ylabel(r'$H_m(k)$')
+    for n in range(y.shape[0]):
+        plt.plot(y[n])
     plt.tight_layout()
     plt.savefig(output_path)
