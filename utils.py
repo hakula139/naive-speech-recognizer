@@ -162,7 +162,7 @@ def plot_mel_filters(output_path, y: np.ndarray) -> None:
 
     plt.figure(figsize=(15, 4))
     plt.title('Mel Filter Banks')
-    plt.xlabel(r'$k$')
+    plt.xlabel(r'$f(k)$')
     plt.ylabel(r'$H_m(k)$')
     for n in range(y.shape[0]):
         plt.plot(y[n])
