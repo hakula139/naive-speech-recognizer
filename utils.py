@@ -134,3 +134,22 @@ def plot_mel_filters(output_path, y: np.ndarray) -> None:
         plt.plot(y[n])
     plt.tight_layout()
     plt.savefig(output_path)
+
+
+def plot_mfcc(output_path, y: np.ndarray) -> None:
+    '''
+    Plot the Mel-frequency cepstral coefficients (MFCCs).
+
+    Args:
+        `output_path`: path to the output figure
+        `y`: the MFCC to plot
+    '''
+
+    plt.figure()
+    plt.title('Mel-Frequency Cepstral Coefficients')
+    plt.xlabel('Windows')
+    plt.ylabel('Dimensions')
+    plt.imshow(y, origin='lower', aspect='auto')
+    plt.colorbar(use_gridspec=True)
+    plt.tight_layout()
+    plt.savefig(output_path)

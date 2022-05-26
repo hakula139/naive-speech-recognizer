@@ -5,7 +5,7 @@ import numpy as np
 import librosa
 
 from fft import fft, fft_freq
-from mfcc import get_mel_filters
+from mfcc import dct, get_mel_filters
 import utils
 from windows import hamming
 
@@ -16,9 +16,11 @@ fig_path = Path('assets/mfcc/dev_set')
 t_window = 16  # milliseconds
 pre_emphasis = 0.97
 amp_th = [2e-3, 6e-3]  # amplitude threshold for voice activity
-zcr_th = 4.5  # zero-crossing rate (ZCR) threshold for voice activity
+zcr_th = 4.5     # zero-crossing rate (ZCR) threshold for voice activity
 zcr_step_th = 5  # threshold of loop iterations when expanding ranges by ZCR
 n_mel_filters = 14
+dim_dct = 40   # dimension of the Discrete Cosine Transform (DCT) matrix
+dim_mfcc = 12  # dimension of the Mel-frequency cepstral coefficients (MFCCs)
 
 
 def load_audio(path: Union[str, Path]) -> Tuple[np.ndarray, int]:
@@ -213,6 +215,20 @@ def plot_spectrogram(
     print(f'Output figure to "{fig_spec_path}".')
 
 
+def plot_mfcc(filename: str, mfcc: np.ndarray) -> None:
+    '''
+    Plot the Mel-frequency cepstral coefficients (MFCCs).
+
+    Args:
+        `filename`: filename of the output figure
+        `mfcc`: the MFCC to plot
+    '''
+
+    fig_mfcc_path = fig_path / filename
+    utils.plot_mfcc(fig_mfcc_path, mfcc)
+    print(f'Output figure to "{fig_mfcc_path}".')
+
+
 if __name__ == '__main__':
     if wav_path.exists():
         wav_paths = [entry for entry in wav_path.rglob('*.dat')]
@@ -249,20 +265,25 @@ if __name__ == '__main__':
                     # Get the spectrogram using STFT.
                     spec, i_starts = create_spectrogram(y[r[0]:r[1]], n_window)
                     power_spec = np.square(spec)
-                    spec = 10 * np.log10(spec)
+                    log_spec = 10 * np.log10(spec)
                     fig_spec_path = f'{p.stem}_spectrogram_{t_window}ms_hamming.png'
                     plot_spectrogram(
-                        fig_spec_path, i_starts, spec, sr, n_window,
+                        fig_spec_path, i_starts, log_spec, sr, n_window,
                     )
 
                     # Filter the power spectrum with the Mel filter banks.
                     filtered_spec = np.dot(filters, power_spec)
-                    filtered_spec = 10 * np.log10(filtered_spec)
+                    log_filtered_spec = 10 * np.log10(filtered_spec)
                     fig_filtered_spec_path = f'{p.stem}_spectrogram_{t_window}ms_hamming_filtered.png'
                     plot_spectrogram(
                         fig_filtered_spec_path,
-                        i_starts, filtered_spec, sr, n_window,
+                        i_starts, log_filtered_spec, sr, n_window,
                     )
+
+                    # Generate the MFCC.
+                    cc = dct(log_filtered_spec, dim_dct)[1:dim_mfcc+1]
+                    fig_mfcc_path = p.stem + '_mfcc.png'
+                    plot_mfcc(fig_mfcc_path, cc)
 
         except KeyboardInterrupt:
             print('\nAborted.')

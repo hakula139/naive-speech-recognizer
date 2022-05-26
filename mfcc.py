@@ -40,12 +40,23 @@ def get_mel_filters(
     return filters
 
 
-def mfcc(spec: np.ndarray, n_filters: int, sr: int) -> np.ndarray:
+def dct(x: np.ndarray, d: int) -> np.ndarray:
     '''
-    Calculate the Mel-Frequency Cepstral Coefficients (MFCCs) from the spectrogram.
+    Perform a Discrete Cosine Transform of a 1D / 2D array.
 
     Args:
-        `spec`: the spectrogram of the audio signal
-        `n_filters`: the number of Mel filterbanks
-        `sr`: sample rate
+        `x`: source array, shape(n, l)
+        `d`: dimension of the DCT matrix
+
+    Returns:
+        The result of DCT, shape(d, l)
     '''
+
+    n = x.shape[0]
+    c = np.sqrt(2 / n)
+    s = np.pi / (2 * n) * np.arange(1, 2 * n, 2)
+    dct_m = np.concatenate([
+        [np.ones(n) / np.sqrt(n)],
+        [c * np.cos(i * s) for i in range(1, d)],
+    ])
+    return np.dot(dct_m, x)
