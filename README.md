@@ -1,4 +1,4 @@
-# digital-signal-processing
+# naive-speech-recognizer
 
 ## Table of Contents
 
@@ -13,9 +13,9 @@
 
 ## 中文报告
 
-1. [FFT: Fast Fourier Transform](./docs/fft.md)
+1. [FFT: 快速傅立叶变换](./docs/fft.md)
 2. [语谱图](./docs/spectrogram.md)
-3. [MFCC: Mel-Frequency Cepstral Coefficients](./docs/mfcc.md)
+3. [MFCC: Mel 频率的倒谱系数](./docs/mfcc.md)
 
 ## Getting Started
 

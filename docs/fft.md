@@ -1,4 +1,4 @@
-# FFT: Fast Fourier Transform
+# FFT: 快速傅立叶变换
 
 ## 目录
 
