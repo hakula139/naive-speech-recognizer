@@ -1,20 +1,21 @@
 # digital-signal-processing
 
-## 中文报告
-
-1. [FFT: Fast Fourier Transform](./docs/fft.md)
-2. [语谱图](./docs/spectrogram.md)
-
 ## Table of Contents
 
-- [中文报告](#中文报告)
 - [Table of Contents](#table-of-contents)
+- [中文报告](#中文报告)
 - [Getting Started](#getting-started)
   - [0 Prerequisites](#0-prerequisites)
   - [1 Installation](#1-installation)
   - [2 Usage](#2-usage)
 - [Contributors](#contributors)
 - [License](#license)
+
+## 中文报告
+
+1. [FFT: Fast Fourier Transform](./docs/fft.md)
+2. [语谱图](./docs/spectrogram.md)
+3. [MFCC: Mel-Frequency Cepstral Coefficients](./docs/mfcc.md)
 
 ## Getting Started
 

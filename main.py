@@ -19,8 +19,7 @@ amp_th = [2e-3, 6e-3]  # amplitude threshold for voice activity
 zcr_th = 4.5     # zero-crossing rate (ZCR) threshold for voice activity
 zcr_step_th = 5  # threshold of loop iterations when expanding ranges by ZCR
 n_mel_filters = 14
-dim_dct = 40   # dimension of the Discrete Cosine Transform (DCT) matrix
-dim_mfcc = 12  # dimension of the Mel-frequency cepstral coefficients (MFCCs)
+dim_mfcc = 13  # dimension of the Mel-frequency cepstral coefficients (MFCCs)
 
 
 def load_audio(path: Union[str, Path]) -> Tuple[np.ndarray, int]:
@@ -320,7 +319,7 @@ if __name__ == '__main__':
                 )
 
                 # Generate the MFCC.
-                cc = dct(log_filtered_spec, dim_dct)[1:dim_mfcc+1]
+                cc = dct(log_filtered_spec, dim_mfcc)
                 fig_mfcc_path = p.stem + '_mfcc.png'
                 plot_mfcc(fig_mfcc_path, cc)
                 txt_mfcc_path = p.stem + '_mfcc.txt'
