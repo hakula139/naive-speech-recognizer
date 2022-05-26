@@ -87,7 +87,41 @@ def plot_spectrogram(
     '''
 
     plt.figure(figsize=(9, 6))
-    plt.title(f'Spectrogram ({n_window} window size, hamming window)')
+    plt.title(f'Spectrogram ({n_window} window size, Hamming window)')
+    plt.xticks(xticks, xlabels)
+    plt.xlabel('Time [s]')
+    plt.yticks(yticks, ylabels)
+    plt.ylabel('Frequency [Hz]')
+    plt.imshow(spec, origin='lower', aspect='auto')
+    plt.colorbar(use_gridspec=True)
+    plt.tight_layout()
+    plt.savefig(output_path)
+
+
+def plot_energy_spec(
+    output_path,
+    spec: np.ndarray,
+    xticks: np.ndarray,
+    xlabels: np.ndarray,
+    yticks: np.ndarray,
+    ylabels: np.ndarray,
+    n_window: int,
+) -> None:
+    '''
+    Plot the energy spectrum of a wave.
+
+    Args:
+        `output_path`: path to the output figure
+        `spec`: the energy spectrum to plot
+        `xticks`: tick locations of the x-axis
+        `xlabels`: tick labels of the x-axis
+        `yticks`: tick locations of the y-axis
+        `ylabels`: tick labels of the y-axis
+        `n_window`: the number of samples used in each window
+    '''
+
+    plt.figure(figsize=(9, 6))
+    plt.title(f'Energy Spectrum ({n_window} window size, Hamming window, Mel filtered)')
     plt.xticks(xticks, xlabels)
     plt.xlabel('Time [s]')
     plt.yticks(yticks, ylabels)

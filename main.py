@@ -215,6 +215,31 @@ def plot_spectrogram(
     print(f'Output figure to "{fig_spec_path}".')
 
 
+def plot_energy_spec(
+    filename: str, i_starts: np.ndarray, spec: np.ndarray, sr: int, n_window: int,
+) -> None:
+    '''
+    Plot the energy spectrum of the audio signal.
+
+    Args:
+        `filename`: filename of the output figure
+        `i_starts`: the starting indices of each window
+        `spec`: the energy spectrum to plot
+        `sr`: sample rate
+        `n_window`: the number of samples used in each window
+    '''
+
+    fig_spec_path = out_path / filename
+    xticks = np.linspace(0, spec.shape[1], 10)
+    xlabels = [f'{i:4.2f}' for i in np.linspace(0, i_starts[-1] / sr, 10)]
+    yticks = np.linspace(0, spec.shape[0], 9)
+    ylabels = np.floor(fft_freq(spec.shape[0], sr, yticks)).astype(int)
+    utils.plot_energy_spec(
+        fig_spec_path, spec, xticks, xlabels, yticks, ylabels, n_window,
+    )
+    print(f'Output figure to "{fig_spec_path}".')
+
+
 def plot_mfcc(filename: str, mfcc: np.ndarray) -> None:
     '''
     Plot the Mel-frequency cepstral coefficients (MFCCs).
@@ -278,18 +303,18 @@ if __name__ == '__main__':
                 # Get the spectrogram using STFT.
                 r = ranges[0]
                 spec, i_starts = create_spectrogram(y[r[0]:r[1]], n_window)
-                power_spec = np.square(spec)
+                energy_spec = np.square(spec)
                 log_spec = 10 * np.log10(spec)
                 fig_spec_path = f'{p.stem}_spectrogram_{t_window}ms_hamming.png'
                 plot_spectrogram(
                     fig_spec_path, i_starts, log_spec, sr, n_window,
                 )
 
-                # Filter the power spectrum with the Mel filter banks.
-                filtered_spec = np.dot(filters, power_spec)
+                # Filter the energy spectrum with the Mel filter banks.
+                filtered_spec = np.dot(filters, energy_spec)
                 log_filtered_spec = 10 * np.log10(filtered_spec)
-                fig_filtered_spec_path = f'{p.stem}_spectrogram_{t_window}ms_hamming_filtered.png'
-                plot_spectrogram(
+                fig_filtered_spec_path = f'{p.stem}_energy_spec_{t_window}ms_hamming_filtered.png'
+                plot_energy_spec(
                     fig_filtered_spec_path,
                     i_starts, log_filtered_spec, sr, n_window,
                 )
