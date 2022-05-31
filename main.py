@@ -78,7 +78,7 @@ def detect_voice_activity(
     # higher than threshold `amp_th[0]`.
     ranges_2: List[List[int]] = []
     for r in ranges_1:
-        i_start, i_stop = r[0], r[1]
+        i_start, i_stop = r
         i_stop_prev = ranges_2[-1][1] if len(ranges_2) > 0 else 0
         while i_start > i_stop_prev and avg_amps[i_start] > amp_th[0]:
             i_start -= 1
@@ -93,7 +93,7 @@ def detect_voice_activity(
     # rate (ZCR) is higher than threshold `zcr_th`.
     ranges_3: List[List[int]] = []
     for r in ranges_2:
-        i_start, i_stop = r[0], r[1]
+        i_start, i_stop = r
         i_stop_prev = ranges_3[-1][1] if len(ranges_3) > 0 else 0
         i_start_min = max(i_stop_prev, r[0] - zcr_step_th)
         i_stop_max = min(len(i_starts) - 1, r[1] + zcr_step_th)
