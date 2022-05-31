@@ -1,5 +1,10 @@
 from typing import List, Tuple, Union
+from functools import reduce
 from pathlib import Path
+from multiprocessing import Pool, cpu_count
+import re
+import signal
+import sys
 
 import numpy as np
 import librosa
@@ -12,12 +17,14 @@ from windows import hamming
 
 # Parameters
 wav_path = Path('data/dev_set')
-out_path = Path('assets/mfcc/dev_set')
+out_path = Path('data/figures/dev_set')
+timeout = 3    # seconds
 t_window = 16  # milliseconds
 pre_emphasis = 0.97
-amp_th = [2e-3, 6e-3]  # amplitude threshold for voice activity
+amp_th = [3e-3, 6e-3]  # amplitude threshold for voice activity
 zcr_th = 4.5     # zero-crossing rate (ZCR) threshold for voice activity
 zcr_step_th = 5  # threshold of loop iterations when expanding ranges by ZCR
+overlap_th = 20  # threshold of range overlap judgement
 n_mel_filters = 14
 dim_mfcc = 13  # dimension of the Mel-frequency cepstral coefficients (MFCCs)
 
@@ -69,7 +76,7 @@ def detect_voice_activity(
     ranges_1: List[List[int]] = []
     for k, avg_amp in enumerate(avg_amps):
         if avg_amp > amp_th[1]:
-            if len(ranges_1) > 0 and k <= ranges_1[-1][1] + 2:  # overlaps
+            if len(ranges_1) > 0 and k <= ranges_1[-1][1] + overlap_th:
                 ranges_1[-1][1] = k
             else:
                 ranges_1.append([k, k])
@@ -84,7 +91,7 @@ def detect_voice_activity(
             i_start -= 1
         while i_stop < len(i_starts) - 1 and avg_amps[i_stop] > amp_th[0]:
             i_stop += 1
-        if i_start <= i_stop_prev + 2 and i_stop_prev != 0:  # overlaps
+        if i_start <= i_stop_prev + overlap_th and i_stop_prev != 0:
             ranges_2[-1][1] = i_stop
         else:
             ranges_2.append([i_start, i_stop])
@@ -101,7 +108,7 @@ def detect_voice_activity(
             i_start -= 1
         while i_stop < i_stop_max and avg_zcrs[i_stop] > zcr_th:
             i_stop += 1
-        if i_start <= i_stop_prev + 2 and i_stop_prev != 0:  # overlaps
+        if i_start <= i_stop_prev + overlap_th and i_stop_prev != 0:
             ranges_3[-1][1] = i_stop
         else:
             ranges_3.append([i_start, i_stop])
@@ -129,9 +136,9 @@ def plot_waveform(
     t = np.arange(n_samples) / sr
     if ranges is not None:
         ranges = np.array(ranges, dtype=float) / sr
-    print(f'Detected voice activities: {ranges}.')
+    print(f'Detected voice activities:\n{ranges}')
     utils.plot_time_domain(fig_time_path, t, y, ranges)
-    print(f'Output figure to "{fig_time_path}".')
+    # print(f'Output figure to "{fig_time_path}".')
 
 
 def plot_zcr(filename: str, i_starts: np.ndarray, zcr: np.ndarray) -> None:
@@ -146,7 +153,7 @@ def plot_zcr(filename: str, i_starts: np.ndarray, zcr: np.ndarray) -> None:
 
     fig_zcr_path = out_path / filename
     utils.plot_zcr(fig_zcr_path, i_starts, zcr)
-    print(f'Output figure to "{fig_zcr_path}".')
+    # print(f'Output figure to "{fig_zcr_path}".')
 
 
 def plot_mel_filters(filename: str, filters: np.ndarray) -> None:
@@ -160,7 +167,7 @@ def plot_mel_filters(filename: str, filters: np.ndarray) -> None:
 
     fig_filters_path = out_path / filename
     utils.plot_mel_filters(fig_filters_path, filters)
-    print(f'Output figure to "{fig_filters_path}".')
+    # print(f'Output figure to "{fig_filters_path}".')
 
 
 def create_spectrogram(y: np.ndarray, n_window: int) -> Tuple[np.ndarray, np.ndarray]:
@@ -211,7 +218,7 @@ def plot_spectrogram(
     utils.plot_spectrogram(
         fig_spec_path, spec, xticks, xlabels, yticks, ylabels, n_window,
     )
-    print(f'Output figure to "{fig_spec_path}".')
+    # print(f'Output figure to "{fig_spec_path}".')
 
 
 def plot_energy_spec(
@@ -236,7 +243,7 @@ def plot_energy_spec(
     utils.plot_energy_spec(
         fig_spec_path, spec, xticks, xlabels, yticks, ylabels, n_window,
     )
-    print(f'Output figure to "{fig_spec_path}".')
+    # print(f'Output figure to "{fig_spec_path}".')
 
 
 def plot_mfcc(filename: str, mfcc: np.ndarray) -> None:
@@ -250,7 +257,7 @@ def plot_mfcc(filename: str, mfcc: np.ndarray) -> None:
 
     fig_mfcc_path = out_path / filename
     utils.plot_mfcc(fig_mfcc_path, mfcc)
-    print(f'Output figure to "{fig_mfcc_path}".')
+    # print(f'Output figure to "{fig_mfcc_path}".')
 
 
 def store_mfcc(filename: str, mfcc: np.ndarray) -> None:
@@ -264,66 +271,87 @@ def store_mfcc(filename: str, mfcc: np.ndarray) -> None:
 
     txt_mfcc_path = out_path / filename
     np.savetxt(txt_mfcc_path, mfcc.T, fmt='%.3f')
-    print(f'Output data to "{txt_mfcc_path}".')
+    # print(f'Output data to "{txt_mfcc_path}".')
+
+
+def train(p: Path) -> None:
+
+    filename = p.stem
+    (out_path / filename).mkdir(parents=True, exist_ok=True)
+    person_i, word_i, take_i = [
+        int(s) for s in re.split('[-_]+', filename)
+    ]
+
+    # Load audio signal from disk.
+    y, sr = load_audio(p)
+
+    # Pre-emphasize and normalize the signal.
+    y = np.append(y[0], y[1:] - pre_emphasis * y[:-1])
+    y = y / np.max(np.abs(y))
+
+    # Get the window length for FFT.
+    n_window = t_window * sr // 1000
+    n_window = utils.next_pow2(n_window)
+
+    # Detect the ranges of voice activity.
+    ranges, i_starts, zcr = detect_voice_activity(y, n_window)
+    # fig_zcr_path = filename + '/zcr.png'
+    # plot_zcr(fig_zcr_path, i_starts, zcr)
+
+    fig_time_path = filename + '/time_domain.png'
+    plot_waveform(fig_time_path, y, sr, ranges)
+
+    # Obtain the Mel filter banks.
+    f_min, f_max = 20, sr // 2
+    filters = get_mel_filters(
+        n_mel_filters, sr, n_window, f_min, f_max,
+    )
+    # fig_filters_path = f'mel_filters_{n_window}_{f_min}-{f_max}.png'
+    # plot_mel_filters(fig_filters_path, filters)
+
+    r = reduce(
+        lambda x, y: y if x[1] - x[0] < y[1] - y[0] else x, ranges,
+    )
+
+    # Get the spectrogram using STFT.
+    spec, i_starts = create_spectrogram(y[r[0]:r[1]], n_window)
+    energy_spec = np.square(spec)
+    # log_spec = 10 * np.log10(spec)
+    # fig_spec_path = f'{filename}/spectrogram_{t_window}ms_hamming.png'
+    # plot_spectrogram(
+    #     fig_spec_path, i_starts, log_spec, sr, n_window,
+    # )
+
+    # Filter the energy spectrum with the Mel filter banks.
+    filtered_spec = np.dot(filters, energy_spec)
+    log_filtered_spec = 10 * np.log10(filtered_spec)
+    fig_filtered_spec_path = f'{filename}/energy_spec_{t_window}ms_hamming_filtered.png'
+    plot_energy_spec(
+        fig_filtered_spec_path,
+        i_starts, log_filtered_spec, sr, n_window,
+    )
+
+    # Generate the MFCC.
+    cc = dct(log_filtered_spec, dim_mfcc)
+    # fig_mfcc_path = filename + '/mfcc.png'
+    # plot_mfcc(fig_mfcc_path, cc)
+    # txt_mfcc_path = filename + '/mfcc.txt'
+    # store_mfcc(txt_mfcc_path, cc)
 
 
 if __name__ == '__main__':
-    if wav_path.exists():
-        wav_paths = [entry for entry in wav_path.rglob('*.dat')]
+    if not wav_path.exists():
+        sys.exit('No wave files found.')
+
+    wav_paths = [entry for entry in wav_path.rglob('*.dat')]
+    sig_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
+    with Pool(cpu_count() - 1 or 1) as pool:
+        signal.signal(signal.SIGINT, sig_handler)
+        results = [pool.apply_async(train, args=(p,)) for p in wav_paths]
+
         try:
-            for p in wav_paths:
-                # Load audio signal from disk.
-                y, sr = load_audio(p)
-
-                # Pre-emphasize and normalize the signal.
-                y = np.append(y[0], y[1:] - pre_emphasis * y[:-1])
-                y = y / np.max(np.abs(y))
-
-                # Get the window length for FFT.
-                n_window = t_window * sr // 1000
-                n_window = utils.next_pow2(n_window)
-
-                # Detect the ranges of voice activity.
-                ranges, i_starts, zcr = detect_voice_activity(y, n_window)
-                fig_zcr_path = p.stem + '_zcr.png'
-                plot_zcr(fig_zcr_path, i_starts, zcr)
-
-                fig_time_path = p.stem + '_time_domain.png'
-                plot_waveform(fig_time_path, y, sr, ranges)
-
-                # Obtain the Mel filter banks.
-                f_min, f_max = 20, sr // 2
-                filters = get_mel_filters(
-                    n_mel_filters, sr, n_window, f_min, f_max,
-                )
-                fig_filters_path = f'mel_filters_{n_window}_{f_min}-{f_max}.png'
-                plot_mel_filters(fig_filters_path, filters)
-
-                # Get the spectrogram using STFT.
-                r = ranges[0]
-                spec, i_starts = create_spectrogram(y[r[0]:r[1]], n_window)
-                energy_spec = np.square(spec)
-                log_spec = 10 * np.log10(spec)
-                fig_spec_path = f'{p.stem}_spectrogram_{t_window}ms_hamming.png'
-                plot_spectrogram(
-                    fig_spec_path, i_starts, log_spec, sr, n_window,
-                )
-
-                # Filter the energy spectrum with the Mel filter banks.
-                filtered_spec = np.dot(filters, energy_spec)
-                log_filtered_spec = 10 * np.log10(filtered_spec)
-                fig_filtered_spec_path = f'{p.stem}_energy_spec_{t_window}ms_hamming_filtered.png'
-                plot_energy_spec(
-                    fig_filtered_spec_path,
-                    i_starts, log_filtered_spec, sr, n_window,
-                )
-
-                # Generate the MFCC.
-                cc = dct(log_filtered_spec, dim_mfcc)
-                fig_mfcc_path = p.stem + '_mfcc.png'
-                plot_mfcc(fig_mfcc_path, cc)
-                txt_mfcc_path = p.stem + '_mfcc.txt'
-                store_mfcc(txt_mfcc_path, cc)
-
+            output = [res.get(timeout) for res in results]
+        except TimeoutError:
+            print('\nTimeout.')
         except KeyboardInterrupt:
             print('\nAborted.')
