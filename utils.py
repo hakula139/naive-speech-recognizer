@@ -43,6 +43,7 @@ def plot_time_domain(
             plt.axvline(x=stop, linestyle='--')
     plt.tight_layout()
     plt.savefig(output_path)
+    plt.close()
 
 
 def plot_freq_domain(output_path, f: np.ndarray, y: np.ndarray) -> None:
@@ -62,6 +63,7 @@ def plot_freq_domain(output_path, f: np.ndarray, y: np.ndarray) -> None:
     plt.plot(f, y, c='red')
     plt.tight_layout()
     plt.savefig(output_path)
+    plt.close()
 
 
 def plot_spectrogram(
@@ -96,6 +98,7 @@ def plot_spectrogram(
     plt.colorbar(use_gridspec=True)
     plt.tight_layout()
     plt.savefig(output_path)
+    plt.close()
 
 
 def plot_energy_spec(
@@ -130,6 +133,7 @@ def plot_energy_spec(
     plt.colorbar(use_gridspec=True)
     plt.tight_layout()
     plt.savefig(output_path)
+    plt.close()
 
 
 def plot_zcr(output_path, t: np.ndarray, y: np.ndarray) -> None:
@@ -149,6 +153,7 @@ def plot_zcr(output_path, t: np.ndarray, y: np.ndarray) -> None:
     plt.plot(t, y)
     plt.tight_layout()
     plt.savefig(output_path)
+    plt.close()
 
 
 def plot_mel_filters(output_path, y: np.ndarray) -> None:
@@ -168,6 +173,7 @@ def plot_mel_filters(output_path, y: np.ndarray) -> None:
         plt.plot(y[n])
     plt.tight_layout()
     plt.savefig(output_path)
+    plt.close()
 
 
 def plot_mfcc(output_path, y: np.ndarray) -> None:
@@ -187,3 +193,4 @@ def plot_mfcc(output_path, y: np.ndarray) -> None:
     plt.colorbar(use_gridspec=True)
     plt.tight_layout()
     plt.savefig(output_path)
+    plt.close()
