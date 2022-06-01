@@ -1,6 +1,6 @@
 from typing import Tuple
 import numpy as np
-from torch import Tensor, LongTensor
+from torch import LongTensor, Tensor
 from torch.utils.data import Dataset
 
 

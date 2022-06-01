@@ -69,17 +69,23 @@ class Model():
         train_size = math.floor(data_size * train_ratio)
         valid_size = data_size - train_size
         train_data, valid_data = random_split(
-            dataset, [train_size, valid_size])
+            dataset, [train_size, valid_size],
+        )
         train_dl = DataLoader(
-            train_data, batch_size, shuffle=True, num_workers=4, pin_memory=True,
+            train_data, batch_size,
+            shuffle=True, num_workers=4, pin_memory=True, drop_last=False,
         )
         valid_dl = DataLoader(
-            valid_data, batch_size, num_workers=4, pin_memory=True,
+            valid_data, batch_size,
+            num_workers=4, pin_memory=True, drop_last=False,
         )
 
         # Start training.
 
-        self.model = Classifier(self.data_len, len(labels))
+        self.model = Classifier(
+            self.data_len, len(labels), self.device,
+        ).to(self.device)
+
         history = fit(
             self.model,
             train_dl,

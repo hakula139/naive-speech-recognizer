@@ -23,12 +23,14 @@ class ClassifierBase(nn.Module):
 
     def train_step(self, batch: Tuple[Tensor, LongTensor]) -> Tensor:
         data, labels = batch
+        data, labels = data.to(self.device), labels.to(self.device)
         out: Tensor = self(data)
         loss = F.cross_entropy(out, labels)
         return loss
 
     def valid_step(self, batch: Tuple[Tensor, LongTensor]) -> Result:
         data, labels = batch
+        data, labels = data.to(self.device), labels.to(self.device)
         out: Tensor = self(data)
         loss = F.cross_entropy(out, labels)
         acc = self.get_accuracy(out, labels)
@@ -50,7 +52,7 @@ class ClassifierBase(nn.Module):
 
 class Classifier(ClassifierBase):
 
-    def __init__(self, data_len: int, label_size: int) -> None:
+    def __init__(self, data_len: int, label_size: int, device=torch.device('cpu')) -> None:
 
         super().__init__()
 
@@ -80,6 +82,7 @@ class Classifier(ClassifierBase):
             nn.ReLU(),
             nn.Linear(512, label_size),
         )
+        self.device = device
 
     def forward(self, x: Tensor) -> Tensor:
         return self.net(x)
