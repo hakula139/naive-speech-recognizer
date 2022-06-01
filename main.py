@@ -10,14 +10,16 @@ import librosa
 
 from fft import fft, fft_freq
 from mfcc import dct, get_mel_filters
-from train import train
+from train import predict, train
 import utils
 from windows import hamming
 
 
 # Parameters
-wav_path = Path('data/dev_set')
-out_path = Path('tmp/dev_set')
+train_in_path = Path('data/dev_set')
+test_in_path = Path('data/test_set')
+train_out_path = Path('tmp/dev_set')
+test_out_path = Path('tmp/test_set')
 timeout = 3    # seconds
 t_window = 16  # milliseconds
 pre_emphasis = 0.97
@@ -346,25 +348,38 @@ def get_mfcc(path: Path) -> np.ndarray:
     return cc
 
 
-if __name__ == '__main__':
+def batch_get_mfcc(paths: List[Path]) -> List[np.ndarray]:
 
-    if not wav_path.exists():
-        sys.exit('No audio file found.')
-
-    wav_paths = list(wav_path.rglob('*.dat'))
     mfcc_data = []
-    meta_data = [utils.get_meta_data(p.stem) for p in wav_paths]
-
     sig_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
     with Pool() as pool:
         signal.signal(signal.SIGINT, sig_handler)
-        results = [pool.apply_async(get_mfcc, args=(p,)) for p in wav_paths]
-
+        results = [pool.apply_async(get_mfcc, args=(p,)) for p in paths]
         try:
             mfcc_data = [res.get(timeout) for res in results]
         except TimeoutError:
             print('\nTimeout.')
         except KeyboardInterrupt:
             print('\nAborted.')
+    return mfcc_data
 
-    train(mfcc_data, meta_data)
+
+if __name__ == '__main__':
+
+    # Training
+
+    in_path, out_path = train_in_path, train_out_path
+    if not in_path.exists():
+        sys.exit('Training set not found.')
+    train_paths = list(in_path.rglob('*.dat'))
+    meta_data = [utils.get_meta_data(p.stem) for p in train_paths]
+    train(batch_get_mfcc(train_paths), meta_data)
+
+    # Testing
+
+    in_path, out_path = test_in_path, test_out_path
+    if not in_path.exists():
+        sys.exit('Testing set not found.')
+    test_paths = list(in_path.rglob('*.dat'))
+    preds = predict(batch_get_mfcc(test_paths))
+    print(preds)

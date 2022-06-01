@@ -12,8 +12,10 @@ import utils
 
 # Parameters
 in_path = Path('tmp/dev_set')
+random_seed = 233
 train_ratio = 0.8
 
+random.seed(random_seed)
 
 if torch.cuda.is_available():
     device = torch.device('cuda')
@@ -43,6 +45,12 @@ def train(mfcc_data: List[np.ndarray], meta_data: List[np.ndarray]) -> None:
     train_size = math.floor(len(batches) * train_ratio)
     train_set = batches[:train_size]
     valid_set = batches[train_size:]
+
+
+def predict(mfcc_data: List[np.ndarray]) -> List[str]:
+
+    preds = [labels[0] for cc in mfcc_data]
+    return preds
 
 
 if __name__ == '__main__':
