@@ -1,12 +1,15 @@
 from typing import List
 import math
 from pathlib import Path
-import random
 import sys
 
 import numpy as np
 import torch
+from torch.utils.data import random_split
+from torch.utils.data.dataloader import DataLoader
 
+from classifier import Classifier, fit
+from dataset import MfccDataset
 import utils
 
 
@@ -14,8 +17,11 @@ import utils
 in_path = Path('tmp/dev_set')
 random_seed = 233
 train_ratio = 0.8
+batch_size = 64
+num_epochs = 30
+learning_rate = 0.001
 
-random.seed(random_seed)
+torch.manual_seed(random_seed)
 
 if torch.cuda.is_available():
     device = torch.device('cuda')
@@ -34,17 +40,43 @@ labels = [
 
 def train(mfcc_data: List[np.ndarray], meta_data: List[np.ndarray]) -> None:
 
-    assert(len(mfcc_data) == len(meta_data))
+    # Prepare dataset.
+
+    assert len(mfcc_data) == len(meta_data), \
+        'Dataset size and label size not match.'
+    data_size = len(mfcc_data)
+    dim_mfcc = mfcc_data[0].shape[0]
+    max_len = max(cc.shape[1] for cc in mfcc_data)
+
+    data = np.zeros((data_size, 1, dim_mfcc, max_len))
+    for i, cc in enumerate(mfcc_data):
+        data[i, 0, :, :cc.shape[1]] = cc
+
     meta_data = np.array(meta_data)
+    targets = meta_data[:, 1]
+    dataset = MfccDataset(data, targets)
 
-    person_labels: np.ndarray = meta_data[:, 0]
-    word_labels: np.ndarray = meta_data[:, 1]
+    train_size = math.floor(data_size * train_ratio)
+    valid_size = data_size - train_size
+    train_data, valid_data = random_split(dataset, [train_size, valid_size])
+    train_dl = DataLoader(
+        train_data, batch_size, shuffle=True, num_workers=4, pin_memory=True,
+    )
+    valid_dl = DataLoader(
+        valid_data, batch_size, num_workers=4, pin_memory=True,
+    )
 
-    batches = [(cc, word_labels[i]) for i, cc in enumerate(mfcc_data)]
-    random.shuffle(batches)
-    train_size = math.floor(len(batches) * train_ratio)
-    train_set = batches[:train_size]
-    valid_set = batches[train_size:]
+    # Start training.
+
+    model = Classifier(len(labels))
+    history = fit(
+        model,
+        train_dl,
+        valid_dl,
+        num_epochs,
+        learning_rate,
+        torch.optim.Adam,
+    )
 
 
 def predict(mfcc_data: List[np.ndarray]) -> List[str]:
