@@ -18,8 +18,7 @@ from windows import hamming
 # Parameters
 train_in_path = Path('data/dev_set')
 test_in_path = Path('data/test_set')
-train_out_path = Path('tmp/dev_set')
-test_out_path = Path('tmp/test_set')
+out_path = Path('tmp')
 timeout = 3    # seconds
 t_window = 16  # milliseconds
 pre_emphasis = 0.97
@@ -368,19 +367,17 @@ if __name__ == '__main__':
 
     # Training
 
-    in_path, out_path = train_in_path, train_out_path
-    if not in_path.exists():
+    if not train_in_path.exists():
         sys.exit('Training set not found.')
     model = Model()
-    train_paths = list(in_path.rglob('*.dat'))
+    train_paths = list(train_in_path.rglob('*.dat'))
     meta_data = [utils.get_meta_data(p.stem) for p in train_paths]
     history = model.train(batch_get_mfcc(train_paths), meta_data)
 
     # Testing
 
-    in_path, out_path = test_in_path, test_out_path
-    if not in_path.exists():
+    if not test_in_path.exists():
         sys.exit('Testing set not found.')
-    test_paths = list(in_path.rglob('*.dat'))
+    test_paths = list(test_in_path.rglob('*.dat'))
     preds = model.predict(batch_get_mfcc(test_paths))
     print(preds)

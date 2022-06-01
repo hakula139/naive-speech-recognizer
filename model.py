@@ -15,7 +15,7 @@ import utils
 
 
 # Parameters
-in_path = Path('tmp/dev_set')
+in_path = Path('tmp')
 random_seed = 233
 train_ratio = 0.8
 batch_size = 64
