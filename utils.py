@@ -31,6 +31,7 @@ def get_meta_data(filename: str) -> np.ndarray:
         A list of meta data, namely, person ID, word ID and take ID.
     '''
 
+    # print(f'Parsing meta data from "{filename}".')
     return np.array([int(s) for s in re.split('[-_]', filename)], dtype=int)
 
 

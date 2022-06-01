@@ -16,10 +16,10 @@ from windows import hamming
 
 
 # Parameters
-train_in_path = Path('data/dev_set')
+train_in_path = Path('data/train_set')
 test_in_path = Path('data/test_set')
 out_path = Path('tmp')
-timeout = 3    # seconds
+timeout = 5    # seconds
 t_window = 16  # milliseconds
 pre_emphasis = 0.97
 amp_th = [3e-3, 6e-3]  # amplitude threshold for voice activity
@@ -42,6 +42,7 @@ def load_audio(path: Union[str, Path]) -> Tuple[np.ndarray, int]:
         `sr`: sample rate of the audio signal
     '''
 
+    print(f'Loading audio "{path}".')
     y, sr = librosa.load(path, sr=None)
     print(f'Loaded audio "{path}" @ {sr} Hz.')
     return y, sr

@@ -55,6 +55,8 @@ class Model():
         assert len(mfcc_data) == len(meta_data), \
             'Dataset size and label size not match.'
         data_size = len(mfcc_data)
+        if data_size == 0:
+            return []
         dim_mfcc = mfcc_data[0].shape[0]
         self.data_len = utils.next_pow2(max(cc.shape[1] for cc in mfcc_data))
 
@@ -101,6 +103,8 @@ class Model():
         # Prepare dataset.
 
         data_size = len(mfcc_data)
+        if data_size == 0:
+            return []
         dim_mfcc = mfcc_data[0].shape[0]
 
         data = np.zeros((data_size, 1, dim_mfcc, self.data_len))
