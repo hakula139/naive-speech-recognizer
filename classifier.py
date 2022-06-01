@@ -14,27 +14,30 @@ class Result(NamedTuple):
 
 class ClassifierBase(nn.Module):
 
+    def get_predictions(self, outputs: Tensor) -> LongTensor:
+        return torch.argmax(outputs, dim=1)
+
     def get_accuracy(self, outputs: Tensor, labels: LongTensor) -> Tensor:
-        preds: LongTensor = torch.argmax(outputs, dim=1)
+        preds = self.get_predictions(outputs)
         return torch.tensor(torch.sum(preds == labels).item() / len(preds))
 
     def train_step(self, batch: Tuple[Tensor, LongTensor]) -> Tensor:
         data, labels = batch
-        out = self(data)
+        out: Tensor = self(data)
         loss = F.cross_entropy(out, labels)
         return loss
 
     def valid_step(self, batch: Tuple[Tensor, LongTensor]) -> Result:
         data, labels = batch
-        out = self(data)
+        out: Tensor = self(data)
         loss = F.cross_entropy(out, labels)
         acc = self.get_accuracy(out, labels)
         return Result(None, loss.detach(), acc)
 
     def train_epoch_end(self, epoch: int, result: Result) -> None:
         train_loss, valid_loss, valid_acc = result
-        print('Epoch {}, train_loss: {:.4f}, valid_loss: {:.4f}, valid_acc: {:.4f}'.format(
-            epoch, train_loss.item(), valid_loss.item(), valid_acc.item(),
+        print('Epoch {}, train_loss: {:.4f}, valid_loss: {:.4f}, valid_acc: {:.2f}%'.format(
+            epoch, train_loss.item(), valid_loss.item(), valid_acc.item() * 100,
         ))
 
     def valid_epoch_end(self, results: List[Result]) -> Result:
@@ -47,7 +50,8 @@ class ClassifierBase(nn.Module):
 
 class Classifier(ClassifierBase):
 
-    def __init__(self, label_size: int):
+    def __init__(self, data_len: int, label_size: int) -> None:
+
         super().__init__()
 
         self.net = nn.Sequential(
@@ -70,32 +74,32 @@ class Classifier(ClassifierBase):
             nn.MaxPool2d(2, 2),
 
             nn.Flatten(),
-            nn.Linear(3328, 1024),
+            nn.Linear(32 * data_len, 1024),
             nn.ReLU(),
             nn.Linear(1024, 512),
             nn.ReLU(),
             nn.Linear(512, label_size),
         )
 
-    def forward(self, x: Tensor):
+    def forward(self, x: Tensor) -> Tensor:
         return self.net(x)
 
 
 @torch.no_grad()
-def evaluate(model: Type[ClassifierBase], valid_dl: DataLoader) -> Result:
+def evaluate(model: Classifier, valid_dl: DataLoader) -> Result:
     model.eval()
     outputs = [model.valid_step(batch) for batch in valid_dl]
     return model.valid_epoch_end(outputs)
 
 
 def fit(
-    model: ClassifierBase,
+    model: Classifier,
     train_dl: DataLoader,
     valid_dl: DataLoader,
     num_epochs: int,
     lr: float,
     optim: Type[torch.optim.Optimizer]
-) -> List:
+) -> List[Result]:
     '''
     Train the model.
 

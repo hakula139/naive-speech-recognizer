@@ -9,8 +9,8 @@ import numpy as np
 import librosa
 
 from fft import fft, fft_freq
+from model import Model
 from mfcc import dct, get_mel_filters
-from train import predict, train
 import utils
 from windows import hamming
 
@@ -371,9 +371,10 @@ if __name__ == '__main__':
     in_path, out_path = train_in_path, train_out_path
     if not in_path.exists():
         sys.exit('Training set not found.')
+    model = Model()
     train_paths = list(in_path.rglob('*.dat'))
     meta_data = [utils.get_meta_data(p.stem) for p in train_paths]
-    train(batch_get_mfcc(train_paths), meta_data)
+    history = model.train(batch_get_mfcc(train_paths), meta_data)
 
     # Testing
 
@@ -381,5 +382,5 @@ if __name__ == '__main__':
     if not in_path.exists():
         sys.exit('Testing set not found.')
     test_paths = list(in_path.rglob('*.dat'))
-    preds = predict(batch_get_mfcc(test_paths))
+    preds = model.predict(batch_get_mfcc(test_paths))
     print(preds)
