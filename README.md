@@ -28,8 +28,8 @@ To set up the environment, you need to have the following dependencies installed
 ### 1 Installation
 
 ```bash
-conda env update --name dsp --file environment.yml
-conda activate dsp
+conda env update --name ml --file environment.yml
+conda activate ml
 ```
 
 ### 2 Usage

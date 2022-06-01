@@ -1,4 +1,6 @@
+from typing import List
 import math
+import re
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -16,6 +18,20 @@ def next_pow2(x: int) -> int:
     '''
 
     return 1 << math.ceil(math.log2(x))
+
+
+def get_meta_data(filename: str) -> np.ndarray:
+    '''
+    Parse meta data from filename.
+
+    Args:
+        `filename`: filename to parse
+
+    Returns:
+        A list of meta data, namely, person ID, word ID and take ID.
+    '''
+
+    return np.array([int(s) for s in re.split('[-_]', filename)], dtype=int)
 
 
 def plot_time_domain(
@@ -124,7 +140,8 @@ def plot_energy_spec(
     '''
 
     plt.figure(figsize=(9, 6))
-    plt.title(f'Energy Spectrum ({n_window} window size, Hamming window, Mel filtered)')
+    plt.title(
+        f'Energy Spectrum ({n_window} window size, Hamming window, Mel filtered)')
     plt.xticks(xticks, xlabels)
     plt.xlabel('Time [s]')
     plt.yticks(yticks, ylabels)

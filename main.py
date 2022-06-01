@@ -1,8 +1,7 @@
 from typing import List, Tuple, Union
 from functools import reduce
 from pathlib import Path
-from multiprocessing import Pool, cpu_count
-import re
+from multiprocessing import Pool
 import signal
 import sys
 
@@ -11,13 +10,14 @@ import librosa
 
 from fft import fft, fft_freq
 from mfcc import dct, get_mel_filters
+from train import train
 import utils
 from windows import hamming
 
 
 # Parameters
 wav_path = Path('data/dev_set')
-out_path = Path('data/figures/dev_set')
+out_path = Path('tmp/dev_set')
 timeout = 3    # seconds
 t_window = 16  # milliseconds
 pre_emphasis = 0.97
@@ -270,20 +270,26 @@ def store_mfcc(filename: str, mfcc: np.ndarray) -> None:
     '''
 
     txt_mfcc_path = out_path / filename
-    np.savetxt(txt_mfcc_path, mfcc.T, fmt='%.3f')
+    np.savetxt(txt_mfcc_path, mfcc.T, fmt='%.7f')
     # print(f'Output data to "{txt_mfcc_path}".')
 
 
-def train(p: Path) -> None:
+def get_mfcc(path: Path) -> np.ndarray:
+    '''
+    Load the audio file from path, and calculate its MFCC.
 
-    filename = p.stem
+    Args:
+        `path`: path to the input file
+
+    Returns:
+        The MFCC of the audio signal.
+    '''
+
+    filename = path.stem
     (out_path / filename).mkdir(parents=True, exist_ok=True)
-    person_i, word_i, take_i = [
-        int(s) for s in re.split('[-_]+', filename)
-    ]
 
     # Load audio signal from disk.
-    y, sr = load_audio(p)
+    y, sr = load_audio(path)
 
     # Pre-emphasize and normalize the signal.
     y = np.append(y[0], y[1:] - pre_emphasis * y[:-1])
@@ -325,33 +331,40 @@ def train(p: Path) -> None:
     # Filter the energy spectrum with the Mel filter banks.
     filtered_spec = np.dot(filters, energy_spec)
     log_filtered_spec = 10 * np.log10(filtered_spec)
-    fig_filtered_spec_path = f'{filename}/energy_spec_{t_window}ms_hamming_filtered.png'
-    plot_energy_spec(
-        fig_filtered_spec_path,
-        i_starts, log_filtered_spec, sr, n_window,
-    )
+    # fig_filtered_spec_path = f'{filename}/energy_spec_{t_window}ms_hamming_filtered.png'
+    # plot_energy_spec(
+    #     fig_filtered_spec_path,
+    #     i_starts, log_filtered_spec, sr, n_window,
+    # )
 
     # Generate the MFCC.
     cc = dct(log_filtered_spec, dim_mfcc)
     # fig_mfcc_path = filename + '/mfcc.png'
     # plot_mfcc(fig_mfcc_path, cc)
-    # txt_mfcc_path = filename + '/mfcc.txt'
-    # store_mfcc(txt_mfcc_path, cc)
+    txt_mfcc_path = filename + '/mfcc.txt'
+    store_mfcc(txt_mfcc_path, cc)
+    return cc
 
 
 if __name__ == '__main__':
-    if not wav_path.exists():
-        sys.exit('No wave files found.')
 
-    wav_paths = [entry for entry in wav_path.rglob('*.dat')]
+    if not wav_path.exists():
+        sys.exit('No audio file found.')
+
+    wav_paths = list(wav_path.rglob('*.dat'))
+    mfcc_data = []
+    meta_data = [utils.get_meta_data(p.stem) for p in wav_paths]
+
     sig_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
-    with Pool(cpu_count() - 1 or 1) as pool:
+    with Pool() as pool:
         signal.signal(signal.SIGINT, sig_handler)
-        results = [pool.apply_async(train, args=(p,)) for p in wav_paths]
+        results = [pool.apply_async(get_mfcc, args=(p,)) for p in wav_paths]
 
         try:
-            output = [res.get(timeout) for res in results]
+            mfcc_data = [res.get(timeout) for res in results]
         except TimeoutError:
             print('\nTimeout.')
         except KeyboardInterrupt:
             print('\nAborted.')
+
+    train(mfcc_data, meta_data)
