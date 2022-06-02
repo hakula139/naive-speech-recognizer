@@ -113,7 +113,8 @@ class Model():
 
         # Start predicting.
 
-        out: Tensor = self.model(Tensor(data).to(self.device))
+        data = Tensor(data).to(self.device)
+        out: Tensor = self.model(data)
         preds = self.model.get_predictions(out).tolist()
         return preds
 

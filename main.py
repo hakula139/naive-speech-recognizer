@@ -9,21 +9,21 @@ import numpy as np
 import librosa
 
 from fft import fft, fft_freq
-from model import Model
+from model import labels, Model
 from mfcc import dct, get_mel_filters
 import utils
 from windows import hamming
 
 
 # Parameters
-train_in_path = Path('data/train_set')
+train_in_path = Path('data/dev_set')
 test_in_path = Path('data/test_set')
 out_path = Path('tmp')
 timeout = 5    # seconds
 t_window = 16  # milliseconds
 pre_emphasis = 0.97
-amp_th = [3e-3, 6e-3]  # amplitude threshold for voice activity
-zcr_th = 4.5     # zero-crossing rate (ZCR) threshold for voice activity
+amp_th = [1e-2, 2e-2]  # amplitude threshold for voice activity
+zcr_th = 5       # zero-crossing rate (ZCR) threshold for voice activity
 zcr_step_th = 5  # threshold of loop iterations when expanding ranges by ZCR
 overlap_th = 20  # threshold of range overlap judgement
 n_mel_filters = 14
@@ -42,9 +42,9 @@ def load_audio(path: Union[str, Path]) -> Tuple[np.ndarray, int]:
         `sr`: sample rate of the audio signal
     '''
 
-    print(f'Loading audio "{path}".')
+    # print(f'[INFO ] Loading audio "{path}".')
     y, sr = librosa.load(path, sr=None)
-    print(f'Loaded audio "{path}" @ {sr} Hz.')
+    print(f'[INFO ] Loaded audio "{path}" @ {sr} Hz.')
     return y, sr
 
 
@@ -138,9 +138,11 @@ def plot_waveform(
     t = np.arange(n_samples) / sr
     if ranges is not None:
         ranges = np.array(ranges, dtype=float) / sr
-    print(f'Detected voice activities:\n{ranges}')
+    # print(f'[INFO ] Detected voice activities: {ranges}')
+    if len(ranges) > 1:
+        print(f'[WARN] Improper voice activities found: {ranges}')
     utils.plot_time_domain(fig_time_path, t, y, ranges)
-    # print(f'Output figure to "{fig_time_path}".')
+    # print(f'[INFO ] Output figure to "{fig_time_path}".')
 
 
 def plot_zcr(filename: str, i_starts: np.ndarray, zcr: np.ndarray) -> None:
@@ -155,7 +157,7 @@ def plot_zcr(filename: str, i_starts: np.ndarray, zcr: np.ndarray) -> None:
 
     fig_zcr_path = out_path / filename
     utils.plot_zcr(fig_zcr_path, i_starts, zcr)
-    # print(f'Output figure to "{fig_zcr_path}".')
+    # print(f'[INFO ] Output figure to "{fig_zcr_path}".')
 
 
 def plot_mel_filters(filename: str, filters: np.ndarray) -> None:
@@ -169,7 +171,7 @@ def plot_mel_filters(filename: str, filters: np.ndarray) -> None:
 
     fig_filters_path = out_path / filename
     utils.plot_mel_filters(fig_filters_path, filters)
-    # print(f'Output figure to "{fig_filters_path}".')
+    # print(f'[INFO ] Output figure to "{fig_filters_path}".')
 
 
 def create_spectrogram(y: np.ndarray, n_window: int) -> Tuple[np.ndarray, np.ndarray]:
@@ -220,7 +222,7 @@ def plot_spectrogram(
     utils.plot_spectrogram(
         fig_spec_path, spec, xticks, xlabels, yticks, ylabels, n_window,
     )
-    # print(f'Output figure to "{fig_spec_path}".')
+    # print(f'[INFO ] Output figure to "{fig_spec_path}".')
 
 
 def plot_energy_spec(
@@ -245,7 +247,7 @@ def plot_energy_spec(
     utils.plot_energy_spec(
         fig_spec_path, spec, xticks, xlabels, yticks, ylabels, n_window,
     )
-    # print(f'Output figure to "{fig_spec_path}".')
+    # print(f'[INFO ] Output figure to "{fig_spec_path}".')
 
 
 def plot_mfcc(filename: str, mfcc: np.ndarray) -> None:
@@ -259,7 +261,7 @@ def plot_mfcc(filename: str, mfcc: np.ndarray) -> None:
 
     fig_mfcc_path = out_path / filename
     utils.plot_mfcc(fig_mfcc_path, mfcc)
-    # print(f'Output figure to "{fig_mfcc_path}".')
+    # print(f'[INFO ] Output figure to "{fig_mfcc_path}".')
 
 
 def store_mfcc(filename: str, mfcc: np.ndarray) -> None:
@@ -273,7 +275,7 @@ def store_mfcc(filename: str, mfcc: np.ndarray) -> None:
 
     txt_mfcc_path = out_path / filename
     np.savetxt(txt_mfcc_path, mfcc.T, fmt='%.7f')
-    # print(f'Output data to "{txt_mfcc_path}".')
+    # print(f'[INFO ] Output data to "{txt_mfcc_path}".')
 
 
 def get_mfcc(path: Path) -> np.ndarray:
@@ -303,8 +305,8 @@ def get_mfcc(path: Path) -> np.ndarray:
 
     # Detect the ranges of voice activity.
     ranges, i_starts, zcr = detect_voice_activity(y, n_window)
-    # fig_zcr_path = filename + '/zcr.png'
-    # plot_zcr(fig_zcr_path, i_starts, zcr)
+    fig_zcr_path = filename + '/zcr.png'
+    plot_zcr(fig_zcr_path, i_starts, zcr)
 
     fig_time_path = filename + '/time_domain.png'
     plot_waveform(fig_time_path, y, sr, ranges)
@@ -358,9 +360,9 @@ def batch_get_mfcc(paths: List[Path]) -> List[np.ndarray]:
         try:
             mfcc_data = [res.get(timeout) for res in results]
         except TimeoutError:
-            print('\nTimeout.')
+            print('\n[FATAL] Timeout.')
         except KeyboardInterrupt:
-            print('\nAborted.')
+            print('\n[INFO ] Aborted.')
     return mfcc_data
 
 
@@ -380,5 +382,10 @@ if __name__ == '__main__':
     if not test_in_path.exists():
         sys.exit('Testing set not found.')
     test_paths = list(test_in_path.rglob('*.dat'))
+    meta_data = [utils.get_meta_data(p.stem) for p in test_paths]
     preds = model.predict(batch_get_mfcc(test_paths))
-    print(preds)
+    confusion = np.zeros((len(labels), len(labels)), dtype=int)
+    for i, pred in enumerate(preds):
+        expected = meta_data[i][1]
+        confusion[expected, pred] += 1
+    print(confusion)
