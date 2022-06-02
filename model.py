@@ -98,7 +98,7 @@ class Model():
         )
         return history
 
-    def predict(self, mfcc_data: List[np.ndarray]) -> List[str]:
+    def predict(self, mfcc_data: List[np.ndarray]) -> List[int]:
 
         # Prepare dataset.
 
@@ -111,14 +111,11 @@ class Model():
         for i, cc in enumerate(mfcc_data):
             data[i, 0, :, :cc.shape[1]] = cc
 
-        meta_data = np.array(meta_data)
-
         # Start predicting.
 
-        out: Tensor = self.model(Tensor(data))
+        out: Tensor = self.model(Tensor(data).to(self.device))
         preds = self.model.get_predictions(out).tolist()
-        pred_labels = [labels[p] for p in preds]
-        return pred_labels
+        return preds
 
 
 if __name__ == '__main__':
@@ -133,4 +130,4 @@ if __name__ == '__main__':
     try:
         history = model.train(mfcc_data, meta_data)
     except KeyboardInterrupt:
-        print('\nAborted.')
+        print('\n[INFO ] Aborted.')

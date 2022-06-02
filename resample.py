@@ -25,12 +25,12 @@ def resample(path: Union[str, Path], sr: int, write_to_file=False) -> np.ndarray
         The resampled audio time series.
     '''
 
-    print(f'Resampling audio "{path}" to sample rate {sr} Hz...')
+    print(f'[INFO ] Resampling audio "{path}" to sample rate {sr} Hz...')
     y, sr = librosa.load(path, sr=sr)
     if write_to_file:
         p_out = Path(path).with_suffix('.dat')
         sf.write(p_out, y, sr, subtype='PCM_16', format='WAV')
-        print(f'Output audio to "{p_out}".')
+        print(f'[INFO ] Output audio to "{p_out}".')
     return y
 
 
@@ -57,10 +57,10 @@ if __name__ == '__main__':
                 r.result(timeout)
                 success_count += 1
         except TimeoutError:
-            print('Timeout.')
+            print('[FATAL] Timeout.')
         except KeyboardInterrupt:
             for r in results:
                 r.cancel()
-            print('\nAborted.')
+            print('\n[INFO ] Aborted.')
 
-        print(f'Processed {success_count} audio files.')
+        print(f'[INFO ] Processed {success_count} audio files.')

@@ -38,7 +38,7 @@ class ClassifierBase(nn.Module):
 
     def train_epoch_end(self, epoch: int, result: Result) -> None:
         train_loss, valid_loss, valid_acc = result
-        print('Epoch {}, train_loss: {:.4f}, valid_loss: {:.4f}, valid_acc: {:.2f}%'.format(
+        print('Epoch {} - train_loss: {:.4f}, valid_loss: {:.4f}, valid_acc: {:.2f}%'.format(
             epoch, train_loss.item(), valid_loss.item(), valid_acc.item() * 100,
         ))
 
