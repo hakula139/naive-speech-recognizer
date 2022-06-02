@@ -16,10 +16,11 @@ import utils
 
 # Parameters
 in_path = Path('tmp')
+model_path = Path('models/model.pth')
 random_seed = 233
 train_ratio = 0.8
-batch_size = 256
-num_epochs = 30
+batch_size = 128
+num_epochs = 40
 learning_rate = 0.001
 
 labels = [
@@ -96,9 +97,19 @@ class Model():
             learning_rate,
             torch.optim.Adam,
         )
+
+        # Save model to file.
+
+        torch.save(self.model, model_path)
         return history
 
     def predict(self, mfcc_data: List[np.ndarray]) -> List[int]:
+
+        # Load model from file.
+
+        if self.model is None and model_path.exists():
+            self.model = torch.load(model_path)
+        assert self.model is not None, 'Model not trained.'
 
         # Prepare dataset.
 
