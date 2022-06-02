@@ -16,18 +16,20 @@ from windows import hamming
 
 
 # Parameters
-train_in_path = Path('data/dev_set')
+train_in_path = Path('data/train_set')
 test_in_path = Path('data/test_set')
 out_path = Path('tmp')
-timeout = 5    # seconds
-t_window = 16  # milliseconds
+timeout = 5             # seconds
+t_window = 16           # milliseconds
+sample_rate = 8000      # Hz
 pre_emphasis = 0.97
-amp_th = [1e-2, 3e-2]  # amplitude threshold for voice activity
-zcr_th = 5       # zero-crossing rate (ZCR) threshold for voice activity
-zcr_step_th = 5  # threshold of loop iterations when expanding ranges by ZCR
-overlap_th = 20  # threshold of range overlap judgement
+amp_th = [4e-3, 1e-2]   # amplitude threshold for voice activity
+dur_th = 5              # duration threshold for voice activity
+zcr_th = 5              # zero-crossing rate (ZCR) threshold for voice activity
+zcr_step_th = 5         # threshold of loop iterations when expanding ranges by ZCR
+overlap_th = 30         # threshold of range overlap judgement
 n_mel_filters = 14
-dim_mfcc = 13  # dimension of the Mel-frequency cepstral coefficients (MFCCs)
+dim_mfcc = 13           # dimension of the Mel-frequency cepstral coefficients (MFCCs)
 
 
 def load_audio(path: Union[str, Path]) -> Tuple[np.ndarray, int]:
@@ -43,7 +45,7 @@ def load_audio(path: Union[str, Path]) -> Tuple[np.ndarray, int]:
     '''
 
     # print(f'[INFO ] Loading audio "{path}".')
-    y, sr = librosa.load(path, sr=None)
+    y, sr = librosa.load(path, sr=sample_rate)
     print(f'[INFO ] Loaded audio "{path}" @ {sr} Hz.')
     return y, sr
 
@@ -139,8 +141,6 @@ def plot_waveform(
     if ranges is not None:
         ranges = np.array(ranges, dtype=float) / sr
     # print(f'[INFO ] Detected voice activities: {ranges}')
-    if len(ranges) > 1:
-        print(f'[WARN] Improper voice activities found: {ranges}')
     utils.plot_time_domain(fig_time_path, t, y, ranges)
     # print(f'[INFO ] Output figure to "{fig_time_path}".')
 
@@ -319,12 +319,14 @@ def get_mfcc(path: Path) -> np.ndarray:
     # fig_filters_path = f'mel_filters_{n_window}_{f_min}-{f_max}.png'
     # plot_mel_filters(fig_filters_path, filters)
 
-    r = reduce(
-        lambda x, y: y if x[1] - x[0] < y[1] - y[0] else x, ranges,
-    )
+    # Concatenate non-adjacent ranges
+    assert len(ranges) > 0, 'No voice activity found.'
+    y = np.concatenate([
+        y[r[0]:r[1]] for r in ranges if r[1] - r[0] > dur_th
+    ])
 
     # Get the spectrogram using STFT.
-    spec, i_starts = create_spectrogram(y[r[0]:r[1]], n_window)
+    spec, i_starts = create_spectrogram(y, n_window)
     energy_spec = np.square(spec)
     # log_spec = 10 * np.log10(spec)
     # fig_spec_path = f'{filename}/spectrogram_{t_window}ms_hamming.png'
@@ -388,4 +390,5 @@ if __name__ == '__main__':
     for i, pred in enumerate(preds):
         expected = meta_data[i][1]
         confusion[expected, pred] += 1
+    np.set_printoptions(linewidth=160)
     print(confusion)

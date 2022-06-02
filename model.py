@@ -109,7 +109,7 @@ class Model():
 
         data = np.zeros((data_size, 1, dim_mfcc, self.data_len))
         for i, cc in enumerate(mfcc_data):
-            data[i, 0, :, :cc.shape[1]] = cc
+            data[i, 0, :, :cc.shape[1]] = cc[:self.data_len]
 
         # Start predicting.
 
