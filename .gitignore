@@ -2,8 +2,8 @@
 
 .DS_Store
 data/
+models/
 tmp/
-
 
 ## Python
 
