@@ -1,4 +1,5 @@
 from typing import List, Tuple, Union
+import argparse
 from pathlib import Path
 from multiprocessing import Pool
 import signal
@@ -401,14 +402,27 @@ def plot_history(history: List[Result]) -> None:
 
 if __name__ == '__main__':
 
+    parser = argparse.ArgumentParser(description='A naive speech recognizer.')
+    parser.add_argument(
+        '--skip',
+        help='skip processing audio files',
+        action=argparse.BooleanOptionalAction,
+    )
+    args = parser.parse_args()
+
     # Training
 
     if not train_in_path.exists():
         sys.exit('Training set not found.')
     model = Model()
     train_paths = list(train_in_path.rglob('*.dat'))
+    if args.skip == True:
+        mfcc_paths = [out_path / p.stem for p in train_paths]
+        mfcc_data = [np.loadtxt(p / 'mfcc.txt').T for p in mfcc_paths]
+    else:
+        mfcc_data = batch_get_mfcc(train_paths)
     meta_data = [utils.get_meta_data(p.stem) for p in train_paths]
-    history = model.train(batch_get_mfcc(train_paths), meta_data)
+    history = model.train(mfcc_data, meta_data)
     plot_history(history)
 
     # Testing
@@ -416,11 +430,20 @@ if __name__ == '__main__':
     if not test_in_path.exists():
         sys.exit('Testing set not found.')
     test_paths = list(test_in_path.rglob('*.dat'))
+    if args.skip == True:
+        mfcc_paths = [out_path / p.stem for p in test_paths]
+        mfcc_data = [np.loadtxt(p / 'mfcc.txt').T for p in mfcc_paths]
+    else:
+        mfcc_data = batch_get_mfcc(test_paths)
     meta_data = [utils.get_meta_data(p.stem) for p in test_paths]
     preds = model.predict(batch_get_mfcc(test_paths))
     confusion = np.zeros((len(labels), len(labels)), dtype=int)
+    test_acc = 0
     for i, pred in enumerate(preds):
         expected = meta_data[i][1]
         confusion[expected, pred] += 1
+        if expected == pred:
+            test_acc += 1
     np.set_printoptions(linewidth=160)
     print(confusion)
+    print('test_acc: {:.2f}%'.format(test_acc / len(preds) * 100))

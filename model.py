@@ -105,10 +105,6 @@ class Model():
 
     def predict(self, mfcc_data: List[np.ndarray]) -> List[int]:
 
-        # Load model from file.
-
-        if self.model is None and model_path.exists():
-            self.model = torch.load(model_path)
         assert self.model is not None, 'Model not trained.'
 
         # Prepare dataset.
