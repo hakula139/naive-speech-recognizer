@@ -1,5 +1,4 @@
 from typing import List, Tuple, Union
-from functools import reduce
 from pathlib import Path
 from multiprocessing import Pool
 import signal
@@ -8,6 +7,7 @@ import sys
 import numpy as np
 import librosa
 
+from classifier import Result
 from fft import fft, fft_freq
 from model import labels, Model
 from mfcc import dct, get_mel_filters
@@ -19,6 +19,7 @@ from windows import hamming
 train_in_path = Path('data/train_set')
 test_in_path = Path('data/test_set')
 out_path = Path('tmp')
+fig_path = Path('assets/recognition/classification')
 timeout = 5             # seconds
 t_window = 16           # milliseconds
 sample_rate = 8000      # Hz
@@ -29,7 +30,8 @@ zcr_th = 5              # zero-crossing rate (ZCR) threshold for voice activity
 zcr_step_th = 5         # threshold of loop iterations when expanding ranges by ZCR
 overlap_th = 30         # threshold of range overlap judgement
 n_mel_filters = 14
-dim_mfcc = 13           # dimension of the Mel-frequency cepstral coefficients (MFCCs)
+# dimension of the Mel-frequency cepstral coefficients (MFCCs)
+dim_mfcc = 13
 
 
 def load_audio(path: Union[str, Path]) -> Tuple[np.ndarray, int]:
@@ -353,6 +355,15 @@ def get_mfcc(path: Path) -> np.ndarray:
 
 
 def batch_get_mfcc(paths: List[Path]) -> List[np.ndarray]:
+    '''
+    Load the audio files from paths, and calculate their MFCCs in batch.
+
+    Args:
+        `paths`: paths to the input files
+
+    Returns:
+        A list of MFCCs of all the audio signals.
+    '''
 
     mfcc_data = []
     sig_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
@@ -368,6 +379,26 @@ def batch_get_mfcc(paths: List[Path]) -> List[np.ndarray]:
     return mfcc_data
 
 
+def plot_history(history: List[Result]) -> None:
+    '''
+    Plot the history while training the model.
+
+    Args:
+        `history`: a list of training history
+    '''
+
+    fig_losses_path = fig_path / 'losses.png'
+    train_losses = [x.train_loss.item() for x in history]
+    valid_losses = [x.valid_loss.item() for x in history]
+    utils.plot_losses(fig_losses_path, train_losses, valid_losses)
+    # print(f'[INFO ] Output figure to "{fig_losses_path}".')
+
+    fig_acc_path = fig_path / 'accuracies.png'
+    acc = [x.valid_acc.item() for x in history]
+    utils.plot_acc(fig_acc_path, acc)
+    # print(f'[INFO ] Output figure to "{fig_acc_path}".')
+
+
 if __name__ == '__main__':
 
     # Training
@@ -378,6 +409,7 @@ if __name__ == '__main__':
     train_paths = list(train_in_path.rglob('*.dat'))
     meta_data = [utils.get_meta_data(p.stem) for p in train_paths]
     history = model.train(batch_get_mfcc(train_paths), meta_data)
+    plot_history(history)
 
     # Testing
 

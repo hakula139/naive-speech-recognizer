@@ -212,3 +212,46 @@ def plot_mfcc(output_path, y: np.ndarray) -> None:
     plt.tight_layout()
     plt.savefig(output_path)
     plt.close()
+
+
+def plot_losses(
+    output_path, train_losses: List[float], valid_losses: List[float],
+) -> None:
+    '''
+    Plot the losses in each epoch while training the model.
+
+    Args:
+        `filename`: filename of the output figure
+        `train_losses`: a list of training losses
+        `valid_losses`: a list of validation losses
+    '''
+
+    plt.figure(figsize=(15, 4))
+    plt.title('Training & Validation Losses')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.plot(train_losses, '-bx')
+    plt.plot(valid_losses, '-rx')
+    plt.legend(['Training', 'Validation'])
+    plt.tight_layout()
+    plt.savefig(output_path)
+    plt.close()
+
+
+def plot_acc(output_path, acc: List[float]) -> None:
+    '''
+    Plot the accuracies in each epoch while training the model.
+
+    Args:
+        `filename`: filename of the output figure
+        `acc`: a list of accuracies
+    '''
+
+    plt.figure(figsize=(15, 4))
+    plt.title('Accuracy')
+    plt.xlabel('Epoch')
+    plt.ylabel('Accuracy')
+    plt.plot(acc, '-x')
+    plt.tight_layout()
+    plt.savefig(output_path)
+    plt.close()
