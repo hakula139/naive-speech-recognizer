@@ -374,9 +374,9 @@ def batch_get_mfcc(paths: List[Path]) -> List[np.ndarray]:
         try:
             mfcc_data = [res.get(timeout) for res in results]
         except TimeoutError:
-            print('\n[FATAL] Timeout.')
+            sys.exit('Timeout.')
         except KeyboardInterrupt:
-            print('\n[INFO ] Aborted.')
+            sys.exit('Aborted.')
     return mfcc_data
 
 
@@ -436,7 +436,7 @@ if __name__ == '__main__':
     else:
         mfcc_data = batch_get_mfcc(test_paths)
     meta_data = [utils.get_meta_data(p.stem) for p in test_paths]
-    preds = model.predict(batch_get_mfcc(test_paths))
+    preds = model.predict(mfcc_data)
     confusion = np.zeros((len(labels), len(labels)), dtype=int)
     test_acc = 0
     for i, pred in enumerate(preds):
