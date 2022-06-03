@@ -16,7 +16,6 @@ import utils
 
 # Parameters
 in_path = Path('tmp')
-model_path = Path('models/model.pth')
 random_seed = 233
 train_ratio = 0.8
 batch_size = 128
@@ -97,10 +96,6 @@ class Model():
             learning_rate,
             torch.optim.Adam,
         )
-
-        # Save model to file.
-
-        torch.save(self.model, model_path)
         return history
 
     def predict(self, mfcc_data: List[np.ndarray]) -> List[int]:
